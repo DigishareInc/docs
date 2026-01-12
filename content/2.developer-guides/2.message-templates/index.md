@@ -6,7 +6,4 @@ description: Manage and send various types of message templates across different
 ---
 
 ::card-group
-::card{title="Outgoing Messages" icon="i-lucide-send" to="/developer-guides/message-templates/outgoing-messages"}
-Detailed reference for sending text, location, and interactive messages.
-::
 ::
