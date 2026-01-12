@@ -31,7 +31,7 @@ Overview
 Learn the basics of the Digishare platform and how to set up your environment.
 ::
 
-::u-page-feature{icon="i-lucide-code" to="/how-to-use"}
+::u-page-feature{icon="i-lucide-code" to="/developer-guides"}
 #title
 Developer Guides
 
@@ -39,7 +39,15 @@ Developer Guides
 Deep dive into API integration, webhooks, and advanced usage scenarios.
 ::
 
-::u-page-feature{icon="i-lucide-webhook" to="/how-to-use/backend-docs"}
+::u-page-feature{icon="i-lucide-lightbulb" to="/use-cases"}
+#title
+Use Cases
+
+#description
+Explore real-world implementation scenarios and business workflows.
+::
+
+::u-page-feature{icon="i-lucide-webhook" to="/developer-guides/backend-docs"}
 #title
 API Reference
 
