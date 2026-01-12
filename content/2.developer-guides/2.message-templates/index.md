@@ -1,10 +1,9 @@
 ---
-navigation: false
+navigation:
+  title: Overview
+title: Message Templates
+description: Manage and send various types of message templates across different channels.
 ---
-
-# Message Templates
-
-Manage and send various types of message templates across different channels.
 
 ::card-group
 ::card{title="Outgoing Messages" icon="i-lucide-send" to="/developer-guides/message-templates/outgoing-messages"}

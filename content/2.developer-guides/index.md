@@ -1,9 +1,8 @@
 ---
 navigation: false
 title: Developer Guides
+description: Welcome to the Developer Guides section. Here you will find structured instructions and best practices for integrating with the Digishare Platform.
 ---
-
-Welcome to the **Developer Guides** section. Here you will find structured instructions and best practices for integrating with the Digishare Platform.
 
 ::card-group
 ::card{title="Authentication" icon="i-lucide-key" to="/developer-guides/1.authentication"}

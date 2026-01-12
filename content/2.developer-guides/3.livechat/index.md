@@ -1,10 +1,9 @@
 ---
-navigation: false
+navigation:
+  title: Overview
+title: LiveChat
+description: Integrate real-time customer support into your applications.
 ---
-
-# LiveChat
-
-Integrate real-time customer support into your applications.
 
 ::card-group
 ::card{title="Integration Guide" icon="i-lucide-message-square" to="/developer-guides/livechat/integration"}
