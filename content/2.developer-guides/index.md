@@ -1,4 +1,7 @@
-# Developer Guides
+---
+navigation: false
+title: Developer Guides
+---
 
 Welcome to the **Developer Guides** section. Here you will find structured instructions and best practices for integrating with the Digishare Platform.
 

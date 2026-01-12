@@ -1,3 +1,7 @@
+---
+navigation: false
+---
+
 # Campaigns
 
 Orchestrate high-volume broadcasts and marketing campaigns.

@@ -1,3 +1,7 @@
+---
+navigation: false
+---
+
 # LiveChat
 
 Integrate real-time customer support into your applications.

@@ -1,3 +1,7 @@
+---
+navigation: false
+---
+
 # Use Cases
 
 Explore real-world scenarios and implementation guides for common business workflows using the Digishare Platform.
