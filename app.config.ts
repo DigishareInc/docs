@@ -36,5 +36,8 @@ export default defineAppConfig({
   ui: {
     primary: "emerald",
     gray: "slate",
+    container: {
+      constrained: "max-w-full",
+    },
   },
 });
