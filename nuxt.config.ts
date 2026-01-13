@@ -13,7 +13,7 @@ export default defineNuxtConfig({
       {
         code: "ar",
         name: "العربية",
-        language: "ar-AR",
+        language: "ar",
         file: "ar.json",
         dir: "rtl",
       },
