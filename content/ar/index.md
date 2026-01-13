@@ -1,59 +1,59 @@
 ---
 seo:
-  title: Digishare Documentation
-  description: Official documentation for the Digishare Platform. Guides, API references, and best practices.
+  title: وثائق Digishare
+  description: الوثائق الرسمية لمنصة Digishare. أدلة، مراجع API، وأفضل الممارسات.
 ---
 
 ::u-page-hero
 #title
-Digishare Platform Documentation
+وثائق منصة Digishare
 
 #description
-Welcome to the official documentation for the Digishare ecosystem. Explore guides, API references, and best practices.
+مرحباً بكم في الوثائق الرسمية لنظام Digishare البيئي. استكشف الأدلة ومراجع API وأفضل الممارسات.
 
 #links
 ::u-button{color="neutral" size="xl" to="/overview/introduction" trailing-icon="i-lucide-arrow-right"}
-Get started
+ابدأ الآن
 ::
 
 ::
 
 ::u-page-section
 #title
-Explore the Ecosystem
+استكشف النظام البيئي
 
 #features
 ::u-page-feature{icon="i-lucide-book-open" to="/overview/introduction"}
 #title
-Overview
+نظرة عامة
 
 #description
-Learn the basics of the Digishare platform and how to set up your environment.
+تعرف على أساسيات منصة Digishare وكيفية إعداد بيئتك.
 ::
 
 ::u-page-feature{icon="i-lucide-code" to="/developer-guides"}
 #title
-Developer Guides
+أدلة المطورين
 
 #description
-Deep dive into API integration, webhooks, and advanced usage scenarios.
+تعمق في تكامل API وwebhooks وسيناريات الاستخدام المتقدمة.
 ::
 
 ::u-page-feature{icon="i-lucide-lightbulb" to="/use-cases"}
 #title
-Use Cases
+حالات الاستخدام
 
 #description
-Explore real-world implementation scenarios and business workflows.
+استكشف سيناريوهات التنفيذ الواقعية وسير العمل للأعمال.
 ::
 
 <!--
 ::u-page-feature{icon="i-lucide-webhook" to="/developer-guides/backend-docs"}
 #title
-API Reference
+مرجع API
 
 #description
-Comprehensive API documentation including endpoints, authentication, and schemas.
+توثيق API شامل يتضمن نقاط النهاية والمصادقة والمخططات.
 ::
 -->
 

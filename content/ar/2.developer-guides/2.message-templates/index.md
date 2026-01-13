@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: Overview
-title: Message Templates
-description: Manage and send various types of message templates across different channels.
+  title: عرض عام
+title: قوالب الرسائل
+description: إدارة وإرسال أنواع مختلفة من قوالب الرسائل عبر قنوات مختلفة.
 ---

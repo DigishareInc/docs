@@ -1,12 +1,12 @@
 ---
 navigation:
-  title: Overview
-title: Use Cases
-description: Explore real-world scenarios and implementation guides for common business workflows using the Digishare Platform.
+  title: عرض عام
+title: حالات الاستخدام
+description: استكشف سيناريوهات من العالم الحقيقي وأدلة التنفيذ لسير عمل الأعمال الشائعة باستخدام منصة Digishare.
 ---
 
 ::card-group
-::card{title="E-Commerce Integration" icon="i-lucide-shopping-cart" to="/use-cases/ecommerce-integration"}
-Automate order notifications and customer support for your online store.
+::card{title="تكامل التجارة الإلكترونية" icon="i-lucide-shopping-cart" to="/use-cases/ecommerce-integration"}
+أتمتة إشعارات الطلبات ودعم العملاء لمتجرك الإلكتروني.
 ::
 ::

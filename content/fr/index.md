@@ -1,59 +1,59 @@
 ---
 seo:
-  title: Digishare Documentation
-  description: Official documentation for the Digishare Platform. Guides, API references, and best practices.
+  title: Documentation Digishare
+  description: Documentation officielle de la plateforme Digishare. Guides, références API et bonnes pratiques.
 ---
 
 ::u-page-hero
 #title
-Digishare Platform Documentation
+Documentation de la Plateforme Digishare
 
 #description
-Welcome to the official documentation for the Digishare ecosystem. Explore guides, API references, and best practices.
+Bienvenue dans la documentation officielle de l'écosystème Digishare. Explorez les guides, les références API et les bonnes pratiques.
 
 #links
 ::u-button{color="neutral" size="xl" to="/overview/introduction" trailing-icon="i-lucide-arrow-right"}
-Get started
+Commencer
 ::
 
 ::
 
 ::u-page-section
 #title
-Explore the Ecosystem
+Explorez l'écosystème
 
 #features
 ::u-page-feature{icon="i-lucide-book-open" to="/overview/introduction"}
 #title
-Overview
+Présentation
 
 #description
-Learn the basics of the Digishare platform and how to set up your environment.
+Apprenez les bases de la plateforme Digishare et comment configurer votre environnement.
 ::
 
 ::u-page-feature{icon="i-lucide-code" to="/developer-guides"}
 #title
-Developer Guides
+Guides Développeurs
 
 #description
-Deep dive into API integration, webhooks, and advanced usage scenarios.
+Plongez dans l'intégration de l'API, les webhooks et les scénarios d'utilisation avancés.
 ::
 
 ::u-page-feature{icon="i-lucide-lightbulb" to="/use-cases"}
 #title
-Use Cases
+Cas d'utilisation
 
 #description
-Explore real-world implementation scenarios and business workflows.
+Explorez des scénarios d'implémentation réels et des flux de travail métier.
 ::
 
 <!--
 ::u-page-feature{icon="i-lucide-webhook" to="/developer-guides/backend-docs"}
 #title
-API Reference
+Référence API
 
 #description
-Comprehensive API documentation including endpoints, authentication, and schemas.
+Documentation API complète incluant les points de terminaison, l'authentification et les schémas.
 ::
 -->
 

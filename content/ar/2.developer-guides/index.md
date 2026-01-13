@@ -1,18 +1,19 @@
 ---
 navigation: false
-title: Developer Guides
-description: Welcome to the Developer Guides section. Here you will find structured instructions and best practices for integrating with the Digishare Platform.
+title: أدلة المطورين
+description: مرحباً بكم في قسم أدلة المطورين. ستجد هنا تعليمات منظمة وأفضل الممارسات للتكامل مع منصة Digishare.
 ---
 
 ::card-group
-::card{title="Authentication" icon="i-lucide-key" to="/developer-guides/1.authentication"}
-Start here to learn how to securely authenticate your API requests.
+::card{title="المصادقة" icon="i-lucide-key" to="/developer-guides/1.authentication"}
+ابدأ هنا لتعلم كيفية مصادقة طلبات API الخاصة بك بأمان.
 ::
 
 ::card{title="LiveChat" icon="i-lucide-messages-square" to="/developer-guides/livechat"}
-Integrate real-time support and chat features into your application.
+ادمج ميزات الدعم والدردشة في الوقت الفعلي في تطبيقك.
 ::
-::card{title="Campaigns" icon="i-lucide-megaphone" to="/developer-guides/campaigns"}
-Orchestrate high-volume broadcasts and WhatsApp marketing flows.
+
+::card{title="الحملات" icon="i-lucide-megaphone" to="/developer-guides/campaigns"}
+تنظيم البث عالي الحجم وتدفقات تسويق WhatsApp.
 ::
 ::

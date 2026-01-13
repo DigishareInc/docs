@@ -1,19 +1,15 @@
 ---
 navigation:
-  title: Overview
-title: Campaigns
-description: Orchestrate high-volume broadcasts and marketing campaigns.
+  title: عرض عام
+title: الحملات
+description: تنظيم البث عالي الحجم والحملات التسويقية.
 ---
 
 ::card-group
-::card{title="WhatsApp Campaigns" icon="i-lucide-smartphone" to="/developer-guides/campaigns/whatsapp"}
-Orchestrate high-volume campaigns using message templates.
+::card{title="حملات WhatsApp" icon="i-lucide-smartphone" to="/developer-guides/campaigns/whatsapp"}
+تنظيم حملات عالية الحجم باستخدام قوالب الرسائل.
 ::
-::card{title="WhatsApp Campaigns (PDF)" icon="i-lucide-megaphone" to="/developer-guides/campaigns/whatsapp-pdf"}
-Advanced campaigns with dynamic PDF attachments and mapping keys.
+::card{title="حملات WhatsApp (PDF)" icon="i-lucide-megaphone" to="/developer-guides/campaigns/whatsapp-pdf"}
+حملات متقدمة مع مرفقات PDF ديناميكية ومفاتيح ربط (mapping keys).
 ::
 ::
-
-```
-
-```
