@@ -6,7 +6,7 @@ description: Explore real-world scenarios and implementation guides for common b
 ---
 
 ::card-group
-::card{title="E-Commerce Integration" icon="i-lucide-shopping-cart" to="/use-cases/1.ecommerce-integration"}
+::card{title="E-Commerce Integration" icon="i-lucide-shopping-cart" to="/use-cases/ecommerce-integration"}
 Automate order notifications and customer support for your online store.
 ::
 ::

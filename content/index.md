@@ -47,6 +47,7 @@ Use Cases
 Explore real-world implementation scenarios and business workflows.
 ::
 
+<!--
 ::u-page-feature{icon="i-lucide-webhook" to="/developer-guides/backend-docs"}
 #title
 API Reference
@@ -54,4 +55,6 @@ API Reference
 #description
 Comprehensive API documentation including endpoints, authentication, and schemas.
 ::
+-->
+
 ::
