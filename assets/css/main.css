@@ -7,3 +7,65 @@
   padding-left: 2rem;
   padding-right: 2rem;
 }
+
+@media print {
+  /* Hide UI elements */
+  header,
+  aside,
+  footer,
+  .toc, 
+  button,
+  .p-dialog, /* modal overlays if any */
+  nav,
+  div[role="separator"]:has(a[href*="edit"]),
+  .grid.grid-cols-1.sm\:grid-cols-2.gap-8 {
+    display: none !important;
+  }
+  
+  /* Reset container widths and margins */
+  .ui-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Critical: Reset height and overflow for html/body to allow pagination */
+  html,
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Reset Main Content Area */
+  div[class*="main"], 
+  main,
+  #__nuxt,
+  .layout-container {
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: visible !important;
+    position: static !important; /* Avoids absolute positioning issues */
+  }
+
+  /* Avoid page breaks inside paragraphs, headings, and code blocks */
+  p, h1, h2, h3, h4, h5, h6, pre, code, ul, ol, li {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Force headers to start on a new page if needed (rarely desired for docs, but good to know) 
+     h1 { page-break-before: always; } 
+  */
+}

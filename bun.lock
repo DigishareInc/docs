@@ -6,7 +6,7 @@
       "name": "digishare_docs",
       "dependencies": {
         "better-sqlite3": "^12.6.0",
-        "docus": "latest",
+        "docus": "^5.4.2",
         "nuxt": "^4.2.2",
       },
     },
