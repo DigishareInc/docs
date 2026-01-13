@@ -20,41 +20,27 @@ Commencer
 
 ::u-page-section
 #title
-Explorez l'écosystème
+Guides d'intégration principaux
 
 #features
-::u-page-feature{icon="i-lucide-book-open" to="/overview/introduction"}
+::u-page-feature{icon="i-lucide-messages-square" to="/developer-guides/livechat"}
 #title
-Présentation
-
+LiveChat
 #description
-Apprenez les bases de la plateforme Digishare et comment configurer votre environnement.
+Communication bidirectionnelle en temps réel. Gérez les événements et envoyez des réponses.
 ::
 
-::u-page-feature{icon="i-lucide-code" to="/developer-guides"}
+::u-page-feature{icon="i-lucide-megaphone" to="/developer-guides/campaigns"}
 #title
-Guides Développeurs
-
+Campagnes
 #description
-Plongez dans l'intégration de l'API, les webhooks et les scénarios d'utilisation avancés.
+Gérez les diffusions à haut volume et le marketing WhatsApp via des modèles de messages.
 ::
 
-::u-page-feature{icon="i-lucide-lightbulb" to="/use-cases"}
+::u-page-feature{icon="i-lucide-shopping-cart" to="/use-cases/ecommerce-integration"}
 #title
-Cas d'utilisation
-
+E-Commerce
 #description
-Explorez des scénarios d'implémentation réels et des flux de travail métier.
+Automatisez les flux de commandes et le support client pour les boutiques en ligne.
 ::
-
-<!--
-::u-page-feature{icon="i-lucide-webhook" to="/developer-guides/backend-docs"}
-#title
-Référence API
-
-#description
-Documentation API complète incluant les points de terminaison, l'authentification et les schémas.
-::
--->
-
 ::
