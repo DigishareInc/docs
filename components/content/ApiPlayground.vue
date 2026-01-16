@@ -7,6 +7,8 @@ import xml from "highlight.js/lib/languages/xml";
 import javascript from "highlight.js/lib/languages/javascript";
 import python from "highlight.js/lib/languages/python";
 import bash from "highlight.js/lib/languages/bash";
+import php from "highlight.js/lib/languages/php";
+import go from "highlight.js/lib/languages/go";
 
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("xml", xml);
@@ -14,6 +16,8 @@ hljs.registerLanguage("javascript", javascript);
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("bash", bash);
 hljs.registerLanguage("shell", bash);
+hljs.registerLanguage("php", php);
+hljs.registerLanguage("go", go);
 
 interface Props {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -49,9 +53,13 @@ const editableVariables = ref<Record<string, string>>({});
 // Editable body - create a reactive copy from props
 const editableBody = ref<string>("");
 
-// Initialize editable variables and body from props
+// Editable headers - create a reactive copy from props
+const editableHeaders = ref<Record<string, string>>({});
+
+// Initialize editable variables, headers, and body from props
 onMounted(() => {
   editableVariables.value = { ...props.variables };
+  editableHeaders.value = { ...props.headers };
   editableBody.value = props.body ? JSON.stringify(props.body, null, 2) : "";
 });
 
@@ -72,11 +80,34 @@ watch(
   { deep: true }
 );
 
+watch(
+  () => props.headers,
+  (newHeaders) => {
+    editableHeaders.value = { ...newHeaders };
+  },
+  { deep: true }
+);
+
+// Add new header
+const newHeaderKey = ref("");
+const newHeaderValue = ref("");
+const addHeader = () => {
+  if (newHeaderKey.value.trim()) {
+    editableHeaders.value[newHeaderKey.value.trim()] = newHeaderValue.value;
+    newHeaderKey.value = "";
+    newHeaderValue.value = "";
+  }
+};
+const removeHeader = (key: string) => {
+  delete editableHeaders.value[key];
+};
+
 const languages = [
   { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-simple-icons-curl" },
   { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-simple-icons-javascript" },
   { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-simple-icons-python" },
-  { label: "Node.js", lang: "node", client: "undici", hlLang: "javascript", icon: "i-simple-icons-nodedotjs" },
+  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-simple-icons-php" },
+  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-simple-icons-go" },
 ];
 
 const methodColors: Record<string, { bg: string; text: string; glow: string }> = {
@@ -125,7 +156,7 @@ const processedUrl = computed(() => replaceVariables(props.url));
 
 const processedHeaders = computed(() => {
   const headers: Record<string, string> = {};
-  for (const [key, value] of Object.entries(props.headers || {})) {
+  for (const [key, value] of Object.entries(editableHeaders.value || {})) {
     headers[key] = replaceVariables(value);
   }
   return headers;
@@ -408,25 +439,62 @@ const formatBytes = (bytes: number) => {
             </div>
           </div>
 
-          <!-- Headers Section -->
+          <!-- Headers Section - NOW EDITABLE -->
           <div v-if="activeRequestTab === 'headers'" class="space-y-4">
-            <div v-if="Object.keys(processedHeaders).length > 0">
-              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
                 Request Headers
               </h4>
-              <div class="space-y-2">
-                <div
-                  v-for="(value, key) in processedHeaders"
-                  :key="key"
-                  class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-700/30"
+              <span class="text-[10px] text-gray-400 dark:text-slate-500">Editable</span>
+            </div>
+            
+            <!-- Existing Headers -->
+            <div v-if="Object.keys(editableHeaders).length > 0" class="space-y-2">
+              <div
+                v-for="(value, key) in editableHeaders"
+                :key="key"
+                class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-700/30"
+              >
+                <span class="text-xs font-mono text-emerald-600 dark:text-emerald-400 min-w-[100px] shrink-0">{{ key }}</span>
+                <span class="text-gray-400 dark:text-slate-500">:</span>
+                <input
+                  v-model="editableHeaders[key]"
+                  type="text"
+                  class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+                <button
+                  @click="removeHeader(String(key))"
+                  class="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Remove header"
                 >
-                  <span class="text-xs font-mono text-emerald-600 dark:text-emerald-400 min-w-[120px] shrink-0">{{ key }}</span>
-                  <code class="flex-1 text-sm text-gray-700 dark:text-slate-300 font-mono break-all">{{ value }}</code>
-                </div>
+                  <UIcon name="i-lucide-x" class="w-4 h-4" />
+                </button>
               </div>
             </div>
-            <div v-else class="text-center py-8 text-gray-400 dark:text-slate-500 text-sm">
-              No custom headers defined
+            
+            <!-- Add New Header -->
+            <div class="flex items-center gap-2 p-3 bg-gray-100 dark:bg-slate-800/50 rounded-lg border border-dashed border-gray-300 dark:border-slate-600">
+              <input
+                v-model="newHeaderKey"
+                type="text"
+                placeholder="Header-Name"
+                class="w-32 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              />
+              <span class="text-gray-400 dark:text-slate-500">:</span>
+              <input
+                v-model="newHeaderValue"
+                type="text"
+                placeholder="value"
+                class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                @keyup.enter="addHeader"
+              />
+              <button
+                @click="addHeader"
+                class="p-1.5 text-emerald-500 hover:text-emerald-600 transition-colors"
+                title="Add header"
+              >
+                <UIcon name="i-lucide-plus" class="w-4 h-4" />
+              </button>
             </div>
           </div>
 
