@@ -3,5 +3,37 @@
   "search": "Search",
   "toc": "On this page",
   "prev": "Previous",
-  "next": "Next"
+  "next": "Next",
+  "api_playground": {
+    "tabs": {
+      "params": "Params",
+      "headers": "Headers",
+      "body": "Body"
+    },
+    "headers": {
+      "title": "Request Headers",
+      "add": "Add header",
+      "remove": "Remove header",
+      "editable": "Editable"
+    },
+    "variables": {
+      "path": "Path Variables",
+      "env": "Environment Variables",
+      "none": "No variables defined"
+    },
+    "body": {
+      "title": "Request Body (JSON)"
+    },
+    "actions": {
+      "send_request": "Send Request",
+      "copy": "Copy",
+      "copied": "Copied!"
+    },
+    "response": {
+      "title": "Response",
+      "failed": "Request Failed",
+      "empty": "Click \"Send Request\" to see the response"
+    },
+    "disclaimer": "Requests are sent directly from your browser. CORS must be enabled on the API."
+  }
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, reactive, watch, onMounted } from "vue";
+import { useI18n } from "vue-i18n"; // Import I18n
 import { snippetz } from "@scalar/snippetz";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
@@ -36,6 +37,8 @@ const props = withDefaults(defineProps<Props>(), {
   headers: () => ({}),
   body: null,
 });
+
+const { t } = useI18n(); // Initialize translation
 
 // --- State ---
 const activeLanguage = ref(0);
@@ -382,7 +385,7 @@ const formatBytes = (bytes: number) => {
               "
               @click="activeRequestTab = tab"
             >
-              {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+              {{ t(`api_playground.tabs.${tab}`) }}
             </button>
           </div>
 
@@ -391,7 +394,7 @@ const formatBytes = (bytes: number) => {
             <!-- Path Variables (in URL) -->
             <div v-if="Object.keys(pathVariables).length > 0">
               <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
-                Path Variables
+                {{ t('api_playground.variables.path') }}
               </h4>
               <div class="space-y-3">
                 <div
@@ -414,7 +417,7 @@ const formatBytes = (bytes: number) => {
             <!-- Environment Variables (in headers/body) -->
             <div v-if="Object.keys(envVariables).length > 0">
               <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
-                Environment Variables
+                {{ t('api_playground.variables.env') }}
               </h4>
               <div class="space-y-3">
                 <div
@@ -435,7 +438,7 @@ const formatBytes = (bytes: number) => {
             </div>
 
             <div v-if="Object.keys(editableVariables).length === 0" class="text-center py-8 text-gray-400 dark:text-slate-500 text-sm">
-              No variables defined
+              {{ t('api_playground.variables.none') }}
             </div>
           </div>
 
@@ -443,9 +446,9 @@ const formatBytes = (bytes: number) => {
           <div v-if="activeRequestTab === 'headers'" class="space-y-4">
             <div class="flex items-center justify-between mb-3">
               <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                Request Headers
+                {{ t('api_playground.headers.title') }}
               </h4>
-              <span class="text-[10px] text-gray-400 dark:text-slate-500">Editable</span>
+              <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ t('api_playground.headers.editable') }}</span>
             </div>
             
             <!-- Existing Headers -->
@@ -465,7 +468,7 @@ const formatBytes = (bytes: number) => {
                 <button
                   @click="removeHeader(String(key))"
                   class="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Remove header"
+                  :title="t('api_playground.headers.remove')"
                 >
                   <UIcon name="i-lucide-x" class="w-4 h-4" />
                 </button>
@@ -491,7 +494,7 @@ const formatBytes = (bytes: number) => {
               <button
                 @click="addHeader"
                 class="p-1.5 text-emerald-500 hover:text-emerald-600 transition-colors"
-                title="Add header"
+                :title="t('api_playground.headers.add')"
               >
                 <UIcon name="i-lucide-plus" class="w-4 h-4" />
               </button>
@@ -503,9 +506,9 @@ const formatBytes = (bytes: number) => {
             <div>
               <div class="flex items-center justify-between mb-3">
                 <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
-                  Request Body (JSON)
+                  {{ t('api_playground.body.title') }}
                 </h4>
-                <span class="text-[10px] text-gray-400 dark:text-slate-500">Editable</span>
+                <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ t('api_playground.headers.editable') }}</span>
               </div>
               <textarea
                 v-model="editableBody"
@@ -526,7 +529,7 @@ const formatBytes = (bytes: number) => {
               class="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 shadow-lg shadow-blue-500/25 transition-all duration-300"
               @click="executeRequest"
             >
-              <span class="font-semibold">Send Request</span>
+              <span class="font-semibold">{{ t('api_playground.actions.send_request') }}</span>
               <kbd
                 class="ml-3 px-2 py-0.5 text-[10px] bg-white/10 rounded border border-white/20 font-mono"
               >
@@ -534,7 +537,7 @@ const formatBytes = (bytes: number) => {
               </kbd>
             </UButton>
             <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-2 text-center">
-              Requests are sent directly from your browser. CORS must be enabled on the API.
+              {{ t('api_playground.disclaimer') }}
             </p>
           </div>
         </div>
@@ -567,7 +570,7 @@ const formatBytes = (bytes: number) => {
               @click="copyToClipboard"
             >
               <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-3.5 h-3.5" />
-              <span>{{ copied ? "Copied!" : "Copy" }}</span>
+              <span>{{ copied ? t('api_playground.actions.copied') : t('api_playground.actions.copy') }}</span>
             </button>
           </div>
 
@@ -597,7 +600,7 @@ const formatBytes = (bytes: number) => {
             <!-- Response Header -->
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/30">
               <div class="flex items-center gap-3">
-                <span class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Response</span>
+                <span class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">{{ t('api_playground.response.title') }}</span>
                 <div v-if="response" class="flex items-center gap-2">
                   <UBadge :color="responseStatusColor" variant="subtle" size="xs">
                     <span class="flex items-center gap-1.5">
@@ -626,7 +629,7 @@ const formatBytes = (bytes: number) => {
                   "
                   @click="activeResponseTab = tab"
                 >
-                  {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+                  {{ t(`api_playground.tabs.${tab}`) }}
                 </button>
               </div>
             </div>
@@ -647,7 +650,7 @@ const formatBytes = (bytes: number) => {
                 >
                   <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
                   <div>
-                    <p class="text-sm font-medium text-red-600 dark:text-red-400">Request Failed</p>
+                    <p class="text-sm font-medium text-red-600 dark:text-red-400">{{ t('api_playground.response.failed') }}</p>
                     <p class="text-xs text-red-500 dark:text-red-300/80 mt-1">{{ error }}</p>
                   </div>
                 </div>
@@ -679,7 +682,7 @@ const formatBytes = (bytes: number) => {
               <!-- Empty State -->
               <div v-else class="p-8 text-center">
                 <UIcon name="i-lucide-arrow-up" class="w-8 h-8 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
-                <p class="text-sm text-gray-400 dark:text-slate-500">Click "Send Request" to see the response</p>
+                <p class="text-sm text-gray-400 dark:text-slate-500">{{ t('api_playground.response.empty') }}</p>
               </div>
             </div>
           </div>

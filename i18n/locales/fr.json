@@ -3,5 +3,37 @@
   "search": "Rechercher",
   "toc": "Sur cette page",
   "prev": "Précédent",
-  "next": "Suivant"
+  "next": "Suivant",
+  "api_playground": {
+    "tabs": {
+      "params": "Paramètres",
+      "headers": "En-têtes",
+      "body": "Corps"
+    },
+    "headers": {
+      "title": "En-têtes de Requête",
+      "add": "Ajouter un en-tête",
+      "remove": "Supprimer l'en-tête",
+      "editable": "Modifiable"
+    },
+    "variables": {
+      "path": "Variables de Chemin",
+      "env": "Variables d'Environnement",
+      "none": "Aucune variable définie"
+    },
+    "body": {
+      "title": "Corps de la Requête (JSON)"
+    },
+    "actions": {
+      "send_request": "Envoyer la Requête",
+      "copy": "Copier",
+      "copied": "Copié !"
+    },
+    "response": {
+      "title": "Réponse",
+      "failed": "La Requête a Échoué",
+      "empty": "Cliquez sur \"Envoyer la Requête\" pour voir la réponse"
+    },
+    "disclaimer": "Les requêtes sont envoyées directement depuis votre navigateur. CORS doit être activé sur l'API."
+  }
 }
