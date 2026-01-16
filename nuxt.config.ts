@@ -1,10 +1,10 @@
 export default defineNuxtConfig({
   // @ts-ignore
-  extends: ["docus"],
+  extends: ["docus"], // Extended from Docus framework (reloading v4)
   future: {
     compatibilityVersion: 5,
   },
-  modules: ["@nuxtjs/i18n"],
+  modules: ["@nuxtjs/i18n", "@nuxt/ui"],
   i18n: {
     langDir: "locales",
     locales: [

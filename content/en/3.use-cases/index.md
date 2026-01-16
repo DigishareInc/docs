@@ -1,6 +1,5 @@
 ---
-navigation:
-  title: Overview
+navigation: false
 title: Use Cases
 description: Explore real-world scenarios and implementation guides for common business workflows using the Digishare Platform.
 ---
