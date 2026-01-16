@@ -5,14 +5,14 @@ description: Bienvenue dans la section Guides Développeur. Vous trouverez ici d
 ---
 
 ::card-group
-::card{title="Authentification" icon="i-lucide-key" to="/developer-guides/1.authentication"}
+::card{title="Authentification" icon="i-lucide-key" to="/fr/developer-guides/1.authentication"}
 Commencez ici pour apprendre à sécuriser l'authentification de vos requêtes API.
 ::
 
-::card{title="LiveChat" icon="i-lucide-messages-square" to="/developer-guides/livechat"}
+::card{title="LiveChat" icon="i-lucide-messages-square" to="/fr/developer-guides/livechat"}
 Intégrez le support en temps réel et les fonctionnalités de chat dans votre application.
 ::
-::card{title="Campagnes" icon="i-lucide-megaphone" to="/developer-guides/campaigns"}
+::card{title="Campagnes" icon="i-lucide-megaphone" to="/fr/developer-guides/campaigns"}
 Orchestrez des diffusions à grand volume et des flux marketing WhatsApp.
 ::
 ::
