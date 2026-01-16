@@ -1,16 +1,19 @@
 ---
 navigation:
-  title: Aperçu
-title: Campagnes
-description: Orchestrez des diffusions à haut volume et des campagnes marketing.
+  title: Overview
+title: Campaigns
+description: Orchestrate high-volume broadcasts and marketing campaigns.
 ---
 
 ::card-group
-::card{title="Campagnes WhatsApp" icon="i-lucide-smartphone" to="/developer-guides/campaigns/whatsapp"}
-Orchestrez des campagnes à haut volume en utilisant des modèles de messages.
+::card{title="WhatsApp Campaigns" icon="i-lucide-smartphone" to="/developer-guides/campaigns/whatsapp"}
+Orchestrate high-volume campaigns using message templates.
+::
+::card{title="WhatsApp Campaigns (PDF)" icon="i-lucide-megaphone" to="/developer-guides/campaigns/whatsapp-pdf"}
+Advanced campaigns with dynamic PDF attachments and mapping keys.
+::
 ::
 
-::card{title="Campagnes WhatsApp (PDF)" icon="i-lucide-megaphone" to="/developer-guides/campaigns/whatsapp-pdf"}
-Campagnes avancées avec des pièces jointes PDF dynamiques et des clés de mapping.
-::
-::
+```
+
+```

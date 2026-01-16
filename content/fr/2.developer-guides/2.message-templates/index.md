@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: Aperçu
-title: Modèles de Message
-description: Gérez et envoyez divers types de modèles de message sur différents canaux.
+  title: Overview
+title: Message Templates
+description: Manage and send various types of message templates across different channels.
 ---

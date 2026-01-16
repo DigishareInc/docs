@@ -1,8 +1,7 @@
 ---
-navigation:
-  title: Aperçu
-title: Cas d'utilisation
-description: Explorez des scénarios réels et des guides d'implémentation pour les flux de travail métier courants utilisant la plateforme Digishare.
+navigation: false
+title: Cas d'Utilisation
+description: Explorez des scénarios réels et des guides d'implémentation pour les flux de travail commerciaux courants utilisant la plateforme Digishare.
 ---
 
 ::card-group
