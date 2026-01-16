@@ -1,15 +1,15 @@
 ---
 navigation:
-  title: Overview
+  title: Vue d'ensemble
 title: LiveChat
-description: Integrate real-time customer support into your applications.
+description: Intégrez le support client en temps réel dans vos applications.
 ---
 
 ::card-group
-::card{title="Integration Guide" icon="i-lucide-message-square" to="/developer-guides/livechat/integration"}
-Set up webhooks and handle real-time customer conversations.
+::card{title="Guide d'Intégration" icon="i-lucide-message-square" to="/developer-guides/livechat/integration"}
+Configurez des webhooks et gérez les conversations clients en temps réel.
 ::
-::card{title="Outgoing Messages" icon="i-lucide-send" to="/developer-guides/livechat/outgoing-messages"}
-Detailed reference for sending text, location, and interactive messages.
+::card{title="Messages Sortants" icon="i-lucide-send" to="/developer-guides/livechat/outgoing-messages"}
+Référence détaillée pour l'envoi de messages texte, de localisation et interactifs.
 ::
 ::
