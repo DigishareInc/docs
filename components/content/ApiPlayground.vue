@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from "vue";
+import { ref, computed, reactive, watch, onMounted } from "vue";
 import { snippetz } from "@scalar/snippetz";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
@@ -43,6 +43,35 @@ const error = ref<string | null>(null);
 const copied = ref(false);
 const showResponse = ref(false);
 
+// Editable variables - create a reactive copy from props
+const editableVariables = ref<Record<string, string>>({});
+
+// Editable body - create a reactive copy from props
+const editableBody = ref<string>("");
+
+// Initialize editable variables and body from props
+onMounted(() => {
+  editableVariables.value = { ...props.variables };
+  editableBody.value = props.body ? JSON.stringify(props.body, null, 2) : "";
+});
+
+// Watch for prop changes
+watch(
+  () => props.variables,
+  (newVars) => {
+    editableVariables.value = { ...newVars };
+  },
+  { deep: true }
+);
+
+watch(
+  () => props.body,
+  (newBody) => {
+    editableBody.value = newBody ? JSON.stringify(newBody, null, 2) : "";
+  },
+  { deep: true }
+);
+
 const languages = [
   { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-simple-icons-curl" },
   { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-simple-icons-javascript" },
@@ -58,15 +87,39 @@ const methodColors: Record<string, { bg: string; text: string; glow: string }> =
   DELETE: { bg: "bg-red-500/20", text: "text-red-400", glow: "shadow-red-500/30" },
 };
 
-// --- Logic: Variable Replacement ---
+// --- Logic: Variable Replacement (uses editable variables) ---
 const replaceVariables = (text: string) => {
   if (!text) return text;
   let result = text;
-  for (const [key, value] of Object.entries(props.variables || {})) {
+  for (const [key, value] of Object.entries(editableVariables.value || {})) {
     result = result.replace(new RegExp(`{${key}}`, "g"), value);
   }
   return result;
 };
+
+// Separate path variables (in URL) from environment variables (in headers/body)
+const pathVariables = computed(() => {
+  const vars: Record<string, string> = {};
+  const urlPattern = /{(\w+)}/g;
+  const matches = props.url?.matchAll(urlPattern) || [];
+  for (const match of matches) {
+    const key = match[1];
+    if (editableVariables.value[key] !== undefined) {
+      vars[key] = editableVariables.value[key];
+    }
+  }
+  return vars;
+});
+
+const envVariables = computed(() => {
+  const vars: Record<string, string> = {};
+  for (const [key, value] of Object.entries(editableVariables.value)) {
+    if (!pathVariables.value[key]) {
+      vars[key] = value;
+    }
+  }
+  return vars;
+});
 
 const processedUrl = computed(() => replaceVariables(props.url));
 
@@ -79,11 +132,15 @@ const processedHeaders = computed(() => {
 });
 
 const processedBody = computed(() => {
-  if (!props.body) return null;
-  if (typeof props.body === "string") {
-    return replaceVariables(props.body);
+  if (!editableBody.value) return null;
+  try {
+    // Parse and apply variable replacement
+    const parsed = JSON.parse(editableBody.value);
+    return parsed;
+  } catch {
+    // If invalid JSON, return the raw string
+    return replaceVariables(editableBody.value);
   }
-  return props.body;
 });
 
 // --- Logic: Code Snippet Generation ---
@@ -97,10 +154,10 @@ const generateSnippet = (lang: string, client: string) => {
     })),
   };
 
-  if (props.body && ["POST", "PUT", "PATCH"].includes(props.method)) {
+  if (editableBody.value && ["POST", "PUT", "PATCH"].includes(props.method)) {
     requestSpec.postData = {
       mimeType: "application/json",
-      text: JSON.stringify(processedBody.value, null, 2),
+      text: editableBody.value,
     };
   }
 
@@ -155,8 +212,8 @@ const executeRequest = async () => {
       headers: processedHeaders.value,
     };
 
-    if (props.body && ["POST", "PUT", "PATCH"].includes(props.method)) {
-      options.body = JSON.stringify(processedBody.value);
+    if (editableBody.value && ["POST", "PUT", "PATCH"].includes(props.method)) {
+      options.body = editableBody.value;
     }
 
     const res = await fetch(processedUrl.value, options);
@@ -226,20 +283,20 @@ const formatBytes = (bytes: number) => {
     @keydown="handleKeydown"
     tabindex="0"
   >
-    <!-- Glassmorphism Container -->
+    <!-- Glassmorphism Container - Now theme-aware -->
     <div
-      class="relative bg-gradient-to-br from-slate-900/95 via-slate-900/98 to-slate-950 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl"
+      class="relative backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl
+             bg-white dark:bg-gradient-to-br dark:from-slate-900/95 dark:via-slate-900/98 dark:to-slate-950
+             border border-gray-200 dark:border-slate-700/50"
     >
       <!-- Gradient Border Glow -->
       <div
         class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style="
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-        "
+        style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))"
       />
 
       <!-- Header -->
-      <div class="relative px-6 py-5 border-b border-slate-700/50">
+      <div class="relative px-6 py-5 border-b border-gray-200 dark:border-slate-700/50">
         <div class="flex items-center gap-4">
           <!-- Method Badge with Glow -->
           <div
@@ -266,13 +323,13 @@ const formatBytes = (bytes: number) => {
           </div>
 
           <!-- URL -->
-          <code class="flex-1 text-sm font-mono text-slate-300 break-all leading-relaxed">
+          <code class="flex-1 text-sm font-mono text-gray-700 dark:text-slate-300 break-all leading-relaxed">
             {{ processedUrl }}
           </code>
         </div>
 
         <!-- Description -->
-        <p v-if="description" class="mt-3 text-sm text-slate-400 leading-relaxed">
+        <p v-if="description" class="mt-3 text-sm text-gray-500 dark:text-slate-400 leading-relaxed">
           {{ description }}
         </p>
       </div>
@@ -280,17 +337,17 @@ const formatBytes = (bytes: number) => {
       <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2">
         <!-- Left Panel: Request Builder -->
-        <div class="border-r border-slate-700/50 p-5">
+        <div class="border-r border-gray-200 dark:border-slate-700/50 p-5">
           <!-- Request Tabs -->
-          <div class="flex items-center gap-1 mb-4 p-1 bg-slate-800/50 rounded-lg w-fit">
+          <div class="flex items-center gap-1 mb-4 p-1 bg-gray-100 dark:bg-slate-800/50 rounded-lg w-fit">
             <button
               v-for="tab in ['params', 'headers', 'body']"
               :key="tab"
               class="px-4 py-2 text-xs font-medium rounded-md transition-all duration-200"
               :class="
                 activeRequestTab === tab
-                  ? 'bg-slate-700 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-md'
+                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
               "
               @click="activeRequestTab = tab"
             >
@@ -298,71 +355,101 @@ const formatBytes = (bytes: number) => {
             </button>
           </div>
 
-          <!-- Variables/Params Section -->
-          <div v-if="activeRequestTab === 'params'" class="space-y-4">
-            <div v-if="Object.keys(variables || {}).length > 0">
-              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          <!-- Variables/Params Section - NOW EDITABLE -->
+          <div v-if="activeRequestTab === 'params'" class="space-y-6">
+            <!-- Path Variables (in URL) -->
+            <div v-if="Object.keys(pathVariables).length > 0">
+              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
                 Path Variables
               </h4>
               <div class="space-y-3">
                 <div
-                  v-for="(value, key) in variables"
+                  v-for="(value, key) in pathVariables"
                   :key="key"
-                  class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30"
+                  class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-700/30"
                 >
-                  <span class="text-xs font-mono text-blue-400 min-w-[80px]">{{ key }}</span>
-                  <span class="text-slate-500">=</span>
-                  <code class="flex-1 text-sm text-slate-300 font-mono">{{ value }}</code>
+                  <label :for="`path-${key}`" class="text-xs font-mono text-blue-600 dark:text-blue-400 min-w-[80px]">{{ key }}</label>
+                  <span class="text-gray-400 dark:text-slate-500">=</span>
+                  <input
+                    :id="`path-${key}`"
+                    v-model="editableVariables[key]"
+                    type="text"
+                    class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
                 </div>
               </div>
             </div>
-            <div v-else class="text-center py-8 text-slate-500 text-sm">
-              No path variables defined
+
+            <!-- Environment Variables (in headers/body) -->
+            <div v-if="Object.keys(envVariables).length > 0">
+              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+                Environment Variables
+              </h4>
+              <div class="space-y-3">
+                <div
+                  v-for="(value, key) in envVariables"
+                  :key="key"
+                  class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-lg border border-purple-200 dark:border-purple-700/30"
+                >
+                  <label :for="`env-${key}`" class="text-xs font-mono text-purple-600 dark:text-purple-400 min-w-[80px]">{{ key }}</label>
+                  <span class="text-gray-400 dark:text-slate-500">=</span>
+                  <input
+                    :id="`env-${key}`"
+                    v-model="editableVariables[key]"
+                    type="text"
+                    class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div v-if="Object.keys(editableVariables).length === 0" class="text-center py-8 text-gray-400 dark:text-slate-500 text-sm">
+              No variables defined
             </div>
           </div>
 
           <!-- Headers Section -->
           <div v-if="activeRequestTab === 'headers'" class="space-y-4">
             <div v-if="Object.keys(processedHeaders).length > 0">
-              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
                 Request Headers
               </h4>
               <div class="space-y-2">
                 <div
                   v-for="(value, key) in processedHeaders"
                   :key="key"
-                  class="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30"
+                  class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-700/30"
                 >
-                  <span class="text-xs font-mono text-emerald-400 min-w-[120px] shrink-0">{{
-                    key
-                  }}</span>
-                  <code class="flex-1 text-sm text-slate-300 font-mono break-all">{{ value }}</code>
+                  <span class="text-xs font-mono text-emerald-600 dark:text-emerald-400 min-w-[120px] shrink-0">{{ key }}</span>
+                  <code class="flex-1 text-sm text-gray-700 dark:text-slate-300 font-mono break-all">{{ value }}</code>
                 </div>
               </div>
             </div>
-            <div v-else class="text-center py-8 text-slate-500 text-sm">
+            <div v-else class="text-center py-8 text-gray-400 dark:text-slate-500 text-sm">
               No custom headers defined
             </div>
           </div>
 
-          <!-- Body Section -->
+          <!-- Body Section - NOW EDITABLE -->
           <div v-if="activeRequestTab === 'body'" class="space-y-4">
-            <div v-if="body">
-              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-                Request Body
-              </h4>
-              <div class="relative">
-                <pre
-                  class="p-4 bg-slate-950/50 rounded-lg border border-slate-700/30 text-sm font-mono text-slate-300 overflow-x-auto"
-                  >{{ JSON.stringify(processedBody, null, 2) }}</pre
-                >
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                  Request Body (JSON)
+                </h4>
+                <span class="text-[10px] text-gray-400 dark:text-slate-500">Editable</span>
               </div>
+              <textarea
+                v-model="editableBody"
+                rows="10"
+                placeholder='{"key": "value"}'
+                class="w-full p-4 bg-gray-50 dark:bg-slate-950/50 rounded-lg border border-gray-200 dark:border-slate-700/30 text-sm font-mono text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+              />
             </div>
-            <div v-else class="text-center py-8 text-slate-500 text-sm">No request body</div>
           </div>
 
           <!-- Execute Button -->
-          <div class="mt-6 pt-4 border-t border-slate-700/30">
+          <div class="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700/30">
             <UButton
               block
               size="lg"
@@ -378,17 +465,17 @@ const formatBytes = (bytes: number) => {
                 ⌘↵
               </kbd>
             </UButton>
-            <p class="text-[10px] text-slate-500 mt-2 text-center">
+            <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-2 text-center">
               Requests are sent directly from your browser. CORS must be enabled on the API.
             </p>
           </div>
         </div>
 
         <!-- Right Panel: Code Snippets & Response -->
-        <div class="flex flex-col bg-slate-950/30">
+        <div class="flex flex-col bg-gray-50 dark:bg-slate-950/30">
           <!-- Language Selector -->
           <div
-            class="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-900/50"
+            class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50 bg-gray-100 dark:bg-slate-900/50"
           >
             <div class="flex gap-1">
               <button
@@ -397,8 +484,8 @@ const formatBytes = (bytes: number) => {
                 class="relative px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200"
                 :class="
                   activeLanguage === index
-                    ? 'text-white bg-slate-700'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'text-white bg-gray-700 dark:bg-slate-700'
+                    : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-800/50'
                 "
                 @click="activeLanguage = index"
               >
@@ -408,7 +495,7 @@ const formatBytes = (bytes: number) => {
 
             <!-- Copy Button -->
             <button
-              class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700 rounded-md transition-all duration-200"
+              class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white bg-gray-200 dark:bg-slate-800/50 hover:bg-gray-300 dark:hover:bg-slate-700 rounded-md transition-all duration-200"
               @click="copyToClipboard"
             >
               <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-3.5 h-3.5" />
@@ -417,11 +504,11 @@ const formatBytes = (bytes: number) => {
           </div>
 
           <!-- Code Block with Line Numbers -->
-          <div class="flex-1 overflow-auto bg-[#0d1117] min-h-[200px] max-h-[350px]">
+          <div class="flex-1 overflow-auto bg-gray-900 dark:bg-[#0d1117] min-h-[200px] max-h-[350px]">
             <div class="flex text-xs font-mono">
               <!-- Line Numbers -->
               <div
-                class="select-none py-4 px-3 text-right text-slate-600 border-r border-slate-800 bg-slate-900/50"
+                class="select-none py-4 px-3 text-right text-gray-500 dark:text-slate-600 border-r border-gray-700 dark:border-slate-800 bg-gray-800 dark:bg-slate-900/50"
               >
                 <div v-for="(_, i) in snippetLines" :key="i" class="leading-6">
                   {{ i + 1 }}
@@ -429,7 +516,7 @@ const formatBytes = (bytes: number) => {
               </div>
               <!-- Code -->
               <pre
-                class="flex-1 p-4 text-slate-300 overflow-x-auto"
+                class="flex-1 p-4 text-gray-200 dark:text-slate-300 overflow-x-auto"
               ><code v-html="highlightedSnippet" class="leading-6"></code></pre>
             </div>
           </div>
@@ -437,14 +524,12 @@ const formatBytes = (bytes: number) => {
           <!-- Response Section -->
           <div
             v-if="showResponse"
-            class="border-t border-slate-700/50 bg-slate-900/50"
+            class="border-t border-gray-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/50"
           >
             <!-- Response Header -->
-            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700/30">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/30">
               <div class="flex items-center gap-3">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
-                  >Response</span
-                >
+                <span class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Response</span>
                 <div v-if="response" class="flex items-center gap-2">
                   <UBadge :color="responseStatusColor" variant="subtle" size="xs">
                     <span class="flex items-center gap-1.5">
@@ -455,10 +540,8 @@ const formatBytes = (bytes: number) => {
                       {{ response.status }} {{ response.statusText }}
                     </span>
                   </UBadge>
-                  <span class="text-[10px] text-slate-500">{{ response.duration }}ms</span>
-                  <span class="text-[10px] text-slate-500"
-                    >{{ formatBytes(response.size) }}</span
-                  >
+                  <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ response.duration }}ms</span>
+                  <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ formatBytes(response.size) }}</span>
                 </div>
               </div>
 
@@ -470,8 +553,8 @@ const formatBytes = (bytes: number) => {
                   class="px-2 py-1 text-[10px] font-medium rounded transition-all duration-200"
                   :class="
                     activeResponseTab === tab
-                      ? 'bg-slate-700 text-white'
-                      : 'text-slate-500 hover:text-slate-300'
+                      ? 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-white'
+                      : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
                   "
                   @click="activeResponseTab = tab"
                 >
@@ -484,20 +567,20 @@ const formatBytes = (bytes: number) => {
             <div class="max-h-[250px] overflow-auto">
               <!-- Loading State -->
               <div v-if="loading" class="p-4 space-y-3">
-                <div class="h-4 bg-slate-800 rounded animate-pulse w-3/4" />
-                <div class="h-4 bg-slate-800 rounded animate-pulse w-1/2" />
-                <div class="h-4 bg-slate-800 rounded animate-pulse w-2/3" />
+                <div class="h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse w-3/4" />
+                <div class="h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse w-1/2" />
+                <div class="h-4 bg-gray-200 dark:bg-slate-800 rounded animate-pulse w-2/3" />
               </div>
 
               <!-- Error State -->
               <div v-else-if="error" class="p-4">
                 <div
-                  class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
+                  class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg"
                 >
-                  <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
                   <div>
-                    <p class="text-sm font-medium text-red-400">Request Failed</p>
-                    <p class="text-xs text-red-300/80 mt-1">{{ error }}</p>
+                    <p class="text-sm font-medium text-red-600 dark:text-red-400">Request Failed</p>
+                    <p class="text-xs text-red-500 dark:text-red-300/80 mt-1">{{ error }}</p>
                   </div>
                 </div>
               </div>
@@ -505,9 +588,9 @@ const formatBytes = (bytes: number) => {
               <!-- Success Response -->
               <div v-else-if="response">
                 <!-- Body Tab -->
-                <div v-if="activeResponseTab === 'body'" class="bg-[#0d1117]">
+                <div v-if="activeResponseTab === 'body'" class="bg-gray-900 dark:bg-[#0d1117]">
                   <pre
-                    class="p-4 text-xs font-mono text-slate-300 whitespace-pre-wrap"
+                    class="p-4 text-xs font-mono text-gray-200 dark:text-slate-300 whitespace-pre-wrap"
                     v-html="formattedResponseBody"
                   />
                 </div>
@@ -519,16 +602,16 @@ const formatBytes = (bytes: number) => {
                     :key="key"
                     class="flex items-start gap-3 text-xs"
                   >
-                    <span class="font-mono text-purple-400 min-w-[140px] shrink-0">{{ key }}</span>
-                    <span class="font-mono text-slate-400 break-all">{{ val }}</span>
+                    <span class="font-mono text-purple-600 dark:text-purple-400 min-w-[140px] shrink-0">{{ key }}</span>
+                    <span class="font-mono text-gray-600 dark:text-slate-400 break-all">{{ val }}</span>
                   </div>
                 </div>
               </div>
 
               <!-- Empty State -->
               <div v-else class="p-8 text-center">
-                <UIcon name="i-lucide-arrow-up" class="w-8 h-8 text-slate-600 mx-auto mb-2" />
-                <p class="text-sm text-slate-500">Click "Send Request" to see the response</p>
+                <UIcon name="i-lucide-arrow-up" class="w-8 h-8 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
+                <p class="text-sm text-gray-400 dark:text-slate-500">Click "Send Request" to see the response</p>
               </div>
             </div>
           </div>
