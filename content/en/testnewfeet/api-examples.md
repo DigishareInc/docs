@@ -1,54 +1,165 @@
-# API Playground Example
+---
+title: API Playground
+description: Interactive API reference with live testing capabilities
+---
 
-Explore our interactive API playground. You can view endpoint details, see code snippets in multiple languages, and execute requests directly.
+# API Playground
 
-## Create a New Project
+Explore our interactive API playground. View endpoint details, generate code snippets in multiple languages, and execute requests directly from your browser.
 
-This example shows how to use the `::api-playground` component to document a `POST` endpoint with URL variables and a request body.
+::callout{icon="i-lucide-sparkles" color="primary"}
+**Pro Tip:** Press `Ctrl+Enter` (or `⌘+Enter` on Mac) to quickly send a request!
+::
 
-::api-playground{method="POST" url="https://api.digishare.ma/v1/projects/{projectId}"}
+---
 
-description: "Initializes a new project container with the specified name and tags."
-variables:
-projectId: "12345"
-token: "your-secret-token"
+## Authentication
+
+All API requests require authentication via Bearer token in the `Authorization` header.
+
+### Get Authentication Token
+
+Authenticate with your credentials to receive an access token.
+
+::api-playground{method="POST" url="https://api.digishare.ma/v1/auth/login"}
+
+description: "Exchange credentials for an access token. Returns a JWT valid for 24 hours."
 headers:
-Authorization: "Bearer {token}"
 Content-Type: "application/json"
 body:
-name: "Atlas Play"
-tags: ["game", "mobile"]
+email: "developer@example.com"
+password: "your-password"
 
 ---
 
 ::
 
-### How it works
+---
 
-1.  **Variable Replacement**: Notice how `{projectId}` in the URL and `{token}` in the headers are replaced by the values in the `variables` property.
-2.  **Dynamic Snippets**: Click the language tabs (cURL, JavaScript, etc.) to see the code update in real-time.
-3.  **Execute Directly**: Click "Execute Request" to send a real fetch request. (Note: The API must support CORS for this to work from your browser).
+## Projects
 
-## Get Project Details
+### Create a New Project
 
-A simple `GET` request example.
+Initialize a new project container with the specified configuration.
 
-::api-playground{method="GET" url="https://api.digishare.ma/v1/projects/all"}
+::api-playground{method="POST" url="https://api.digishare.ma/v1/projects"}
 
-## description: "Retrieves a list of all available projects."
+description: "Creates a new project with the given name and tags. Returns the created project object."
+variables:
+token: "eyJhbGciOiJIUzI1NiIs..."
+headers:
+Authorization: "Bearer {token}"
+Content-Type: "application/json"
+body:
+name: "Atlas Mobile App"
+description: "Cross-platform mobile application"
+tags: ["mobile", "react-native", "production"]
+
+---
 
 ::
 
-## Testing with HttpBin
+### List All Projects
 
-You can also test the execution using a service like `httpbin.org`.
+Retrieve a paginated list of all projects in your workspace.
+
+::api-playground{method="GET" url="https://api.digishare.ma/v1/projects"}
+
+description: "Returns an array of project objects with pagination metadata."
+variables:
+token: "eyJhbGciOiJIUzI1NiIs..."
+headers:
+Authorization: "Bearer {token}"
+
+---
+
+::
+
+### Get Project by ID
+
+Retrieve detailed information about a specific project.
+
+::api-playground{method="GET" url="https://api.digishare.ma/v1/projects/{projectId}"}
+
+description: "Returns the full project object including settings and team members."
+variables:
+projectId: "proj_abc123"
+token: "eyJhbGciOiJIUzI1NiIs..."
+headers:
+Authorization: "Bearer {token}"
+
+---
+
+::
+
+### Update Project
+
+Modify an existing project's configuration.
+
+::api-playground{method="PATCH" url="https://api.digishare.ma/v1/projects/{projectId}"}
+
+description: "Partially updates project fields. Only include fields you want to change."
+variables:
+projectId: "proj_abc123"
+token: "eyJhbGciOiJIUzI1NiIs..."
+headers:
+Authorization: "Bearer {token}"
+Content-Type: "application/json"
+body:
+name: "Atlas Mobile App v2"
+status: "active"
+
+---
+
+::
+
+### Delete Project
+
+Permanently remove a project and all associated data.
+
+::api-playground{method="DELETE" url="https://api.digishare.ma/v1/projects/{projectId}"}
+
+description: "Deletes a project. This action cannot be undone."
+variables:
+projectId: "proj_abc123"
+token: "eyJhbGciOiJIUzI1NiIs..."
+headers:
+Authorization: "Bearer {token}"
+
+---
+
+::
+
+---
+
+## Testing with HTTPBin
+
+Use `httpbin.org` to test the playground functionality. These endpoints echo your request data back.
+
+### POST Request Test
 
 ::api-playground{method="POST" url="https://httpbin.org/post"}
 
-description: "Simple test endpoint that mirrors your request."
+description: "Echo endpoint that mirrors your request. Great for testing the playground!"
+headers:
+Content-Type: "application/json"
+X-Custom-Header: "test-value"
 body:
-test: "hello"
-source: "ApiPlayground"
+message: "Hello from ApiPlayground!"
+timestamp: "2024-01-16T12:00:00Z"
+nested:
+level: 1
+active: true
+
+---
+
+::
+
+### GET Request Test
+
+::api-playground{method="GET" url="https://httpbin.org/get"}
+
+description: "Simple GET request that returns request metadata."
 
 ---
 

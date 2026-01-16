@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { snippetz } from "@scalar/snippetz";
-import hljs from 'highlight.js/lib/core';
-import json from 'highlight.js/lib/languages/json';
-import xml from 'highlight.js/lib/languages/xml';
-import javascript from 'highlight.js/lib/languages/javascript';
-import python from 'highlight.js/lib/languages/python';
-import bash from 'highlight.js/lib/languages/bash';
-import 'highlight.js/styles/github-dark.css'; // Or another style
+import hljs from "highlight.js/lib/core";
+import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
+import javascript from "highlight.js/lib/languages/javascript";
+import python from "highlight.js/lib/languages/python";
+import bash from "highlight.js/lib/languages/bash";
 
-hljs.registerLanguage('json', json);
-hljs.registerLanguage('xml', xml);
-hljs.registerLanguage('javascript', javascript);
-hljs.registerLanguage('python', python);
-hljs.registerLanguage('bash', bash);
-hljs.registerLanguage('shell', bash);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("shell", bash);
 
 interface Props {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -27,24 +26,37 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   method: "GET",
+  url: "",
+  description: "",
   variables: () => ({}),
   headers: () => ({}),
   body: null,
 });
 
 // --- State ---
-const activeTab = ref(0);
+const activeLanguage = ref(0);
+const activeRequestTab = ref("params");
+const activeResponseTab = ref("body");
 const loading = ref(false);
 const response = ref<any>(null);
 const error = ref<string | null>(null);
 const copied = ref(false);
+const showResponse = ref(false);
 
 const languages = [
-  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash" },
-  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript" },
-  { label: "Python", lang: "python", client: "requests", hlLang: "python" },
-  { label: "Node.js", lang: "node", client: "undici", hlLang: "javascript" },
+  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-simple-icons-curl" },
+  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-simple-icons-javascript" },
+  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-simple-icons-python" },
+  { label: "Node.js", lang: "node", client: "undici", hlLang: "javascript", icon: "i-simple-icons-nodedotjs" },
 ];
+
+const methodColors: Record<string, { bg: string; text: string; glow: string }> = {
+  GET: { bg: "bg-blue-500/20", text: "text-blue-400", glow: "shadow-blue-500/30" },
+  POST: { bg: "bg-emerald-500/20", text: "text-emerald-400", glow: "shadow-emerald-500/30" },
+  PUT: { bg: "bg-amber-500/20", text: "text-amber-400", glow: "shadow-amber-500/30" },
+  PATCH: { bg: "bg-orange-500/20", text: "text-orange-400", glow: "shadow-orange-500/30" },
+  DELETE: { bg: "bg-red-500/20", text: "text-red-400", glow: "shadow-red-500/30" },
+};
 
 // --- Logic: Variable Replacement ---
 const replaceVariables = (text: string) => {
@@ -94,23 +106,25 @@ const generateSnippet = (lang: string, client: string) => {
 
   try {
     const result = snippetz().print(lang, client, requestSpec);
-    console.log(`[Snippet Gen] ${lang}:`, result);
-    return result || `// Error: Failed to generate snippet for ${lang} (Result: ${result})`;
+    return result || `// Error generating snippet`;
   } catch (err) {
-    console.error("Snippetz error:", err);
     return `// Error generating snippet: ${err}`;
   }
 };
 
 const currentSnippet = computed(() => {
-  const { lang, client } = languages[activeTab.value];
+  const { lang, client } = languages[activeLanguage.value];
   return generateSnippet(lang, client);
 });
 
 const highlightedSnippet = computed(() => {
-  const { hlLang } = languages[activeTab.value];
-  if (!currentSnippet.value) return '';
+  const { hlLang } = languages[activeLanguage.value];
+  if (!currentSnippet.value) return "";
   return hljs.highlight(currentSnippet.value, { language: hlLang }).value;
+});
+
+const snippetLines = computed(() => {
+  return currentSnippet.value.split("\n");
 });
 
 // --- Logic: Copy to Clipboard ---
@@ -131,6 +145,7 @@ const executeRequest = async () => {
   loading.value = true;
   response.value = null;
   error.value = null;
+  showResponse.value = true;
 
   const startTime = Date.now();
 
@@ -160,7 +175,8 @@ const executeRequest = async () => {
       statusText: res.statusText,
       headers: Object.fromEntries(res.headers.entries()),
       body,
-      duration: `${duration}ms`,
+      duration,
+      size: JSON.stringify(body).length,
     };
   } catch (err: any) {
     error.value = err.message || "An unknown error occurred";
@@ -169,214 +185,351 @@ const executeRequest = async () => {
   }
 };
 
-const formattedResponseBody = computed(() => {
-  if (!response.value) return '';
-  const content = typeof response.value.body === 'object' 
-    ? JSON.stringify(response.value.body, null, 2) 
-    : response.value.body;
-  
-  if (typeof response.value.body === 'object') {
-     return hljs.highlight(content, { language: 'json' }).value;
+// Keyboard shortcut
+const handleKeydown = (e: KeyboardEvent) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    e.preventDefault();
+    executeRequest();
   }
-  return content; // Plain text
+};
+
+const formattedResponseBody = computed(() => {
+  if (!response.value) return "";
+  const content =
+    typeof response.value.body === "object"
+      ? JSON.stringify(response.value.body, null, 2)
+      : response.value.body;
+
+  if (typeof response.value.body === "object") {
+    return hljs.highlight(content, { language: "json" }).value;
+  }
+  return content;
 });
+
+const responseStatusColor = computed(() => {
+  if (!response.value) return "neutral";
+  if (response.value.status < 300) return "success";
+  if (response.value.status < 400) return "info";
+  if (response.value.status < 500) return "warning";
+  return "error";
+});
+
+const formatBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+};
 </script>
 
 <template>
   <div
-    class="api-playground my-8 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-900 shadow-sm"
+    class="api-playground group my-8 rounded-2xl overflow-hidden transition-all duration-300"
+    @keydown="handleKeydown"
+    tabindex="0"
   >
-    <!-- Header -->
+    <!-- Glassmorphism Container -->
     <div
-      class="p-4 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50"
+      class="relative bg-gradient-to-br from-slate-900/95 via-slate-900/98 to-slate-950 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden shadow-2xl"
     >
-      <!-- VERSION_DEBUG_MARKER -->
-      <div class="flex items-center gap-2 mb-1">
-        <UBadge
-          :color="
-            method === 'GET'
-              ? 'primary'
-              : method === 'POST'
-                ? 'emerald'
-                : method === 'DELETE'
-                  ? 'red'
-                  : 'orange'
-          "
-          variant="solid"
-          size="sm"
-          class="font-mono"
-        >
-          {{ method }}
-        </UBadge>
-        <code
-          class="text-sm font-mono text-gray-700 dark:text-gray-300 break-all"
-          >{{ processedUrl }}</code
-        >
-      </div>
-      <p
-        v-if="description"
-        class="text-sm text-gray-500 dark:text-gray-400 mt-2"
-      >
-        {{ description }}
-      </p>
-    </div>
+      <!-- Gradient Border Glow -->
+      <div
+        class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+        style="
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+        "
+      />
 
-    <div
-      class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200 dark:divide-gray-800"
-    >
-      <!-- Left Panel: Config & Info -->
-      <div class="p-4 space-y-6">
-        <!-- Variables Section -->
-        <div v-if="Object.keys(variables || {}).length > 0">
-          <h4
-            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
+      <!-- Header -->
+      <div class="relative px-6 py-5 border-b border-slate-700/50">
+        <div class="flex items-center gap-4">
+          <!-- Method Badge with Glow -->
+          <div
+            class="relative"
+            :class="methodColors[method]?.glow"
+            style="filter: drop-shadow(0 0 12px currentColor)"
           >
-            Variables
-          </h4>
-          <div class="space-y-3">
-            <div v-for="(value, key) in variables" :key="key" class="mb-3">
-              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">{{ key }}</label>
-              <UInput
-                :model-value="value"
-                readonly
-                variant="outline"
-                color="gray"
-                icon="i-heroicons-variable"
-              />
+            <span
+              class="inline-flex items-center px-3 py-1.5 rounded-lg font-mono font-bold text-sm tracking-wide transition-all duration-300"
+              :class="[methodColors[method]?.bg, methodColors[method]?.text]"
+            >
+              <span class="relative flex h-2 w-2 mr-2">
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                  :class="methodColors[method]?.text.replace('text-', 'bg-')"
+                />
+                <span
+                  class="relative inline-flex rounded-full h-2 w-2"
+                  :class="methodColors[method]?.text.replace('text-', 'bg-')"
+                />
+              </span>
+              {{ method }}
+            </span>
+          </div>
+
+          <!-- URL -->
+          <code class="flex-1 text-sm font-mono text-slate-300 break-all leading-relaxed">
+            {{ processedUrl }}
+          </code>
+        </div>
+
+        <!-- Description -->
+        <p v-if="description" class="mt-3 text-sm text-slate-400 leading-relaxed">
+          {{ description }}
+        </p>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2">
+        <!-- Left Panel: Request Builder -->
+        <div class="border-r border-slate-700/50 p-5">
+          <!-- Request Tabs -->
+          <div class="flex items-center gap-1 mb-4 p-1 bg-slate-800/50 rounded-lg w-fit">
+            <button
+              v-for="tab in ['params', 'headers', 'body']"
+              :key="tab"
+              class="px-4 py-2 text-xs font-medium rounded-md transition-all duration-200"
+              :class="
+                activeRequestTab === tab
+                  ? 'bg-slate-700 text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              "
+              @click="activeRequestTab = tab"
+            >
+              {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+            </button>
+          </div>
+
+          <!-- Variables/Params Section -->
+          <div v-if="activeRequestTab === 'params'" class="space-y-4">
+            <div v-if="Object.keys(variables || {}).length > 0">
+              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                Path Variables
+              </h4>
+              <div class="space-y-3">
+                <div
+                  v-for="(value, key) in variables"
+                  :key="key"
+                  class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30"
+                >
+                  <span class="text-xs font-mono text-blue-400 min-w-[80px]">{{ key }}</span>
+                  <span class="text-slate-500">=</span>
+                  <code class="flex-1 text-sm text-slate-300 font-mono">{{ value }}</code>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-slate-500 text-sm">
+              No path variables defined
             </div>
           </div>
-        </div>
 
-        <!-- Request Body Preview -->
-        <div v-if="body">
-          <h4
-            class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3"
-          >
-            Request Body
-          </h4>
-          <div
-            class="bg-gray-50 dark:bg-gray-950 p-3 rounded border border-gray-200 dark:border-gray-800"
-          >
-            <pre
-              class="text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre-wrap"
-              >{{ JSON.stringify(processedBody, null, 2) }}</pre
+          <!-- Headers Section -->
+          <div v-if="activeRequestTab === 'headers'" class="space-y-4">
+            <div v-if="Object.keys(processedHeaders).length > 0">
+              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                Request Headers
+              </h4>
+              <div class="space-y-2">
+                <div
+                  v-for="(value, key) in processedHeaders"
+                  :key="key"
+                  class="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg border border-slate-700/30"
+                >
+                  <span class="text-xs font-mono text-emerald-400 min-w-[120px] shrink-0">{{
+                    key
+                  }}</span>
+                  <code class="flex-1 text-sm text-slate-300 font-mono break-all">{{ value }}</code>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-slate-500 text-sm">
+              No custom headers defined
+            </div>
+          </div>
+
+          <!-- Body Section -->
+          <div v-if="activeRequestTab === 'body'" class="space-y-4">
+            <div v-if="body">
+              <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+                Request Body
+              </h4>
+              <div class="relative">
+                <pre
+                  class="p-4 bg-slate-950/50 rounded-lg border border-slate-700/30 text-sm font-mono text-slate-300 overflow-x-auto"
+                  >{{ JSON.stringify(processedBody, null, 2) }}</pre
+                >
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-slate-500 text-sm">No request body</div>
+          </div>
+
+          <!-- Execute Button -->
+          <div class="mt-6 pt-4 border-t border-slate-700/30">
+            <UButton
+              block
+              size="lg"
+              :loading="loading"
+              icon="i-lucide-play"
+              class="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 shadow-lg shadow-blue-500/25 transition-all duration-300"
+              @click="executeRequest"
             >
+              <span class="font-semibold">Send Request</span>
+              <kbd
+                class="ml-3 px-2 py-0.5 text-[10px] bg-white/10 rounded border border-white/20 font-mono"
+              >
+                ⌘↵
+              </kbd>
+            </UButton>
+            <p class="text-[10px] text-slate-500 mt-2 text-center">
+              Requests are sent directly from your browser. CORS must be enabled on the API.
+            </p>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="pt-4">
-          <UButton
-            block
-            size="lg"
-            :loading="loading"
-            icon="i-heroicons-play"
-            @click="executeRequest"
-          >
-            Execute Request
-          </UButton>
-          <p class="text-[10px] text-gray-400 mt-2 text-center italic">
-            Note: Requests are made directly from your browser. Cross-Origin
-            Resource Sharing (CORS) must be enabled on the API.
-          </p>
-        </div>
-      </div>
-
-      <!-- Right Panel: Code & Response -->
-      <div class="bg-gray-50 dark:bg-gray-950 flex flex-col min-h-[400px]">
-        <!-- Code Snippets -->
-        <div class="flex-1 flex flex-col">
+        <!-- Right Panel: Code Snippets & Response -->
+        <div class="flex flex-col bg-slate-950/30">
+          <!-- Language Selector -->
           <div
-            class="border-b border-gray-200 dark:border-gray-800 px-4 py-2 flex items-center justify-between"
+            class="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-900/50"
           >
-            <div class="flex gap-2">
+            <div class="flex gap-1">
               <button
                 v-for="(lang, index) in languages"
                 :key="lang.label"
-                class="px-3 py-1 text-xs font-medium rounded transition-colors"
+                class="relative px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200"
                 :class="
-                  activeTab === index
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                  activeLanguage === index
+                    ? 'text-white bg-slate-700'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                 "
-                @click="activeTab = index"
+                @click="activeLanguage = index"
               >
                 {{ lang.label }}
               </button>
             </div>
-            <UButton
-              size="2xs"
-              variant="ghost"
-              color="gray"
-              :icon="copied ? 'i-heroicons-check' : 'i-heroicons-clipboard'"
+
+            <!-- Copy Button -->
+            <button
+              class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700 rounded-md transition-all duration-200"
               @click="copyToClipboard"
             >
-              {{ copied ? "Copied!" : "Copy" }}
-            </UButton>
+              <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-3.5 h-3.5" />
+              <span>{{ copied ? "Copied!" : "Copy" }}</span>
+            </button>
           </div>
-          <div class="p-4 flex-1 overflow-auto bg-[#0d1117]">
-             <!-- We use v-html for syntax highlighted code (safe here as it's generated code) -->
-            <pre class="text-xs font-mono h-full text-gray-300"><code v-html="highlightedSnippet"></code></pre>
-          </div>
-        </div>
 
-        <!-- Response Area -->
-        <div
-          v-if="response || error"
-          class="border-t border-gray-200 dark:border-gray-800 p-4 bg-white dark:bg-gray-900"
-        >
-          <div class="flex items-center justify-between mb-3">
-            <h4
-              class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-            >
-              Response
-            </h4>
-            <div v-if="response" class="flex gap-2">
-              <UBadge
-                :color="response.status < 300 ? 'emerald' : 'red'"
-                size="xs"
+          <!-- Code Block with Line Numbers -->
+          <div class="flex-1 overflow-auto bg-[#0d1117] min-h-[200px] max-h-[350px]">
+            <div class="flex text-xs font-mono">
+              <!-- Line Numbers -->
+              <div
+                class="select-none py-4 px-3 text-right text-slate-600 border-r border-slate-800 bg-slate-900/50"
               >
-                {{ response.status }} {{ response.statusText }}
-              </UBadge>
-              <UBadge color="gray" size="xs">{{ response.duration }}</UBadge>
+                <div v-for="(_, i) in snippetLines" :key="i" class="leading-6">
+                  {{ i + 1 }}
+                </div>
+              </div>
+              <!-- Code -->
+              <pre
+                class="flex-1 p-4 text-slate-300 overflow-x-auto"
+              ><code v-html="highlightedSnippet" class="leading-6"></code></pre>
             </div>
           </div>
 
-          <div v-if="error">
-            <UAlert
-              icon="i-heroicons-exclamation-triangle"
-              color="red"
-              variant="soft"
-              :title="error"
-            />
-          </div>
-
-          <div v-if="response" class="space-y-4">
-            <!-- Headers -->
-            <details class="text-[11px]">
-              <summary
-                class="cursor-pointer text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-medium"
-              >
-                Headers
-              </summary>
-              <div
-                class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-gray-600 dark:text-gray-400"
-              >
-                <template v-for="(val, key) in response.headers" :key="key">
-                  <div class="font-semibold">{{ key }}:</div>
-                  <div class="truncate">{{ val }}</div>
-                </template>
+          <!-- Response Section -->
+          <div
+            v-if="showResponse"
+            class="border-t border-slate-700/50 bg-slate-900/50"
+          >
+            <!-- Response Header -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700/30">
+              <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                  >Response</span
+                >
+                <div v-if="response" class="flex items-center gap-2">
+                  <UBadge :color="responseStatusColor" variant="subtle" size="xs">
+                    <span class="flex items-center gap-1.5">
+                      <span
+                        v-if="response.status >= 400"
+                        class="flex h-1.5 w-1.5 animate-pulse rounded-full bg-current"
+                      />
+                      {{ response.status }} {{ response.statusText }}
+                    </span>
+                  </UBadge>
+                  <span class="text-[10px] text-slate-500">{{ response.duration }}ms</span>
+                  <span class="text-[10px] text-slate-500"
+                    >{{ formatBytes(response.size) }}</span
+                  >
+                </div>
               </div>
-            </details>
 
-            <!-- Body -->
-            <div
-              class="bg-[#0d1117] p-3 rounded border border-gray-200 dark:border-gray-800 max-h-[300px] overflow-auto"
-            >
-              <pre
-                class="text-xs font-mono text-gray-300 whitespace-pre-wrap"
-                v-html="formattedResponseBody"
-              ></pre>
+              <!-- Response Tabs -->
+              <div v-if="response" class="flex gap-1">
+                <button
+                  v-for="tab in ['body', 'headers']"
+                  :key="tab"
+                  class="px-2 py-1 text-[10px] font-medium rounded transition-all duration-200"
+                  :class="
+                    activeResponseTab === tab
+                      ? 'bg-slate-700 text-white'
+                      : 'text-slate-500 hover:text-slate-300'
+                  "
+                  @click="activeResponseTab = tab"
+                >
+                  {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Response Content -->
+            <div class="max-h-[250px] overflow-auto">
+              <!-- Loading State -->
+              <div v-if="loading" class="p-4 space-y-3">
+                <div class="h-4 bg-slate-800 rounded animate-pulse w-3/4" />
+                <div class="h-4 bg-slate-800 rounded animate-pulse w-1/2" />
+                <div class="h-4 bg-slate-800 rounded animate-pulse w-2/3" />
+              </div>
+
+              <!-- Error State -->
+              <div v-else-if="error" class="p-4">
+                <div
+                  class="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg"
+                >
+                  <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p class="text-sm font-medium text-red-400">Request Failed</p>
+                    <p class="text-xs text-red-300/80 mt-1">{{ error }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Success Response -->
+              <div v-else-if="response">
+                <!-- Body Tab -->
+                <div v-if="activeResponseTab === 'body'" class="bg-[#0d1117]">
+                  <pre
+                    class="p-4 text-xs font-mono text-slate-300 whitespace-pre-wrap"
+                    v-html="formattedResponseBody"
+                  />
+                </div>
+
+                <!-- Headers Tab -->
+                <div v-if="activeResponseTab === 'headers'" class="p-4 space-y-2">
+                  <div
+                    v-for="(val, key) in response.headers"
+                    :key="key"
+                    class="flex items-start gap-3 text-xs"
+                  >
+                    <span class="font-mono text-purple-400 min-w-[140px] shrink-0">{{ key }}</span>
+                    <span class="font-mono text-slate-400 break-all">{{ val }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div v-else class="p-8 text-center">
+                <UIcon name="i-lucide-arrow-up" class="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                <p class="text-sm text-slate-500">Click "Send Request" to see the response</p>
+              </div>
             </div>
           </div>
         </div>
@@ -386,28 +539,50 @@ const formattedResponseBody = computed(() => {
 </template>
 
 <style scoped>
-/* Import Highlight.js styles - docus might handle this differently, but for component isolation we can do this or use global */
-/* We already imported the css in script setup */
-
-.api-playground pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
+.api-playground {
+  --tw-ring-color: rgba(99, 102, 241, 0.2);
 }
 
-/* Custom scrollbar for small code blocks */
-::-webkit-scrollbar {
+.api-playground:focus {
+  outline: none;
+}
+
+.api-playground:focus-visible {
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5);
+}
+
+/* Custom scrollbar */
+.api-playground ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-::-webkit-scrollbar-track {
+
+.api-playground ::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  background: #8884;
+
+.api-playground ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
   border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #8886;
+
+.api-playground ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
+}
+
+/* Code highlighting enhancements */
+.api-playground pre code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Smooth transitions for all interactive elements */
+.api-playground button {
+  transition: all 0.2s ease;
+}
+
+/* Focus styles for keyboard navigation */
+.api-playground button:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.5);
+  outline-offset: 2px;
 }
 </style>
