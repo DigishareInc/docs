@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   },
   modules: ["@nuxtjs/i18n", "@nuxt/ui"],
   i18n: {
-    langDir: "i18n/locales",
+    langDir: "locales",
     locales: [
       { code: "en", name: "English", language: "en-US", file: "en.json" },
       { code: "fr", name: "Français", language: "fr-FR", file: "fr.json" },
