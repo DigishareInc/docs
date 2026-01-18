@@ -166,12 +166,20 @@ const resetToDefaults = () => {
 };
 
 const languages = [
-  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-lucide-terminal" },
-  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-lucide-braces" },
-  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-lucide-code" },
-  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-lucide-file-code" },
-  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-lucide-zap" },
+  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-lucide-terminal", color: "blue" },
+  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-lucide-braces", color: "yellow" },
+  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-lucide-code", color: "sky" },
+  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-lucide-file-code", color: "indigo" },
+  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-lucide-zap", color: "cyan" },
 ];
+
+const langColors: Record<string, string> = {
+  blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+  yellow: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20",
+  sky: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+  indigo: "text-indigo-400 bg-indigo-400/10 border-indigo-500/20",
+  cyan: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+};
 
 const methodColors: Record<string, { bg: string; text: string; glow: string; border: string }> = {
   GET: { bg: "bg-blue-500/10", text: "text-blue-500 dark:text-blue-400", glow: "", border: "border-blue-500/30" },
@@ -520,10 +528,10 @@ const formatBytes = (bytes: number) => {
               <button
                 v-for="(lang, index) in languages"
                 :key="lang.label"
-                class="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all duration-300 whitespace-nowrap"
+                class="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all duration-300 whitespace-nowrap border"
                 :class="activeLanguage === index
-                  ? 'bg-gray-800 text-white dark:bg-white/15'
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                  ? [langColors[lang.color], 'shadow-lg shadow-' + lang.color + '-500/5']
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 border-transparent'"
                 @click="activeLanguage = index"
               >
                 <UIcon :name="lang.icon" class="w-3.5 h-3.5" />
@@ -545,9 +553,14 @@ const formatBytes = (bytes: number) => {
           </div>
 
           <!-- Code Display -->
-          <div class="relative group/code flex-1 bg-gray-950 dark:bg-black/60 min-h-[240px] overflow-hidden">
-             <div class="absolute top-4 right-4 z-10 opacity-0 group-hover/code:opacity-100 transition-opacity">
-               <UBadge color="gray" variant="solid" size="xs" class="font-mono uppercase">{{ languages[activeLanguage].lang }}</UBadge>
+          <div class="relative group/code flex-1 bg-gray-950 dark:bg-[#080b13] min-h-[240px] overflow-hidden">
+             <div class="absolute top-4 right-4 z-10">
+               <span 
+                 class="px-2 py-0.5 rounded font-mono text-[9px] font-black uppercase tracking-tighter border transition-all duration-500"
+                 :class="[langColors[languages[activeLanguage].color]]"
+               >
+                 {{ languages[activeLanguage].lang }}
+               </span>
              </div>
              
              <div class="flex h-full overflow-auto text-[13px] font-mono leading-relaxed">
