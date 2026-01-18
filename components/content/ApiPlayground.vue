@@ -807,4 +807,57 @@ pre code {
     border-radius: 0;
   }
 }
+
+/* Premium Code Theme: One Dark Inspired */
+:deep(.hljs-keyword),
+:deep(.hljs-selector-tag),
+:deep(.hljs-title),
+:deep(.hljs-section),
+:deep(.hljs-doctag),
+:deep(.hljs-name),
+:deep(.hljs-strong) {
+  color: #c678dd; /* Purple */
+  font-weight: 600;
+}
+
+:deep(.hljs-string),
+:deep(.hljs-type),
+:deep(.hljs-built_in),
+:deep(.hljs-bullet),
+:deep(.hljs-quote),
+:deep(.hljs-number),
+:deep(.hljs-regexp),
+:deep(.hljs-symbol),
+:deep(.hljs-variable),
+:deep(.hljs-template-variable),
+:deep(.hljs-link),
+:deep(.hljs-attr) {
+  color: #98c379; /* Green */
+}
+
+:deep(.hljs-string) { color: #98c379; }
+:deep(.hljs-attr) { color: #d19a66; } /* Orange/Gold for attributes */
+:deep(.hljs-number) { color: #d19a66; }
+:deep(.hljs-property) { color: #61afef; } /* Blue */
+:deep(.hljs-function) { color: #61afef; }
+:deep(.hljs-params) { color: #abb2bf; }
+
+:deep(.hljs-comment),
+:deep(.hljs-deletion) {
+  color: #5c6370;
+  font-style: italic;
+}
+
+:deep(.hljs-keyword) { color: #c678dd; }
+:deep(.hljs-literal) { color: #56b6c2; } /* Cyan */
+:deep(.hljs-addition) { color: #98c379; }
+
+:deep(.hljs-title.function_) { color: #61afef; }
+:deep(.hljs-title.class_) { color: #e5c07b; } /* Yellow/Gold */
+
+/* Variable highlighting in URL and Code */
+.text-indigo-500 {
+  color: #818cf8 !important;
+  text-shadow: 0 0 10px rgba(129, 140, 248, 0.2);
+}
 </style>
