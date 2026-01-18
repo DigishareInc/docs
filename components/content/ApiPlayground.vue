@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted } from "vue";
-import { useI18n } from "vue-i18n"; // Import I18n
+import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
 import { snippetz } from "@scalar/snippetz";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
   body: null,
 });
 
-const { t } = useI18n(); // Initialize translation
+const { t } = useI18n();
 
 // --- State ---
 const activeLanguage = ref(0);
@@ -49,49 +49,96 @@ const response = ref<any>(null);
 const error = ref<string | null>(null);
 const copied = ref(false);
 const showResponse = ref(false);
+const flashSuccess = ref(false);
+const mobileView = ref<'request' | 'code'>('request');
 
-// Editable variables - create a reactive copy from props
+// Editable state
 const editableVariables = ref<Record<string, string>>({});
-
-// Editable body - create a reactive copy from props
 const editableBody = ref<string>("");
-
-// Editable headers - create a reactive copy from props
 const editableHeaders = ref<Record<string, string>>({});
 
-// Initialize editable variables, headers, and body from props
+// Sensitive header visibility (for password toggle)
+const hiddenHeaders = ref<Set<string>>(new Set(['Authorization', 'X-API-Key', 'Api-Key', 'Secret']));
+const visibleSecrets = ref<Set<string>>(new Set());
+
+// JSON validation state
+const isBodyValid = ref(true);
+const bodyError = ref<string>("");
+
+// Initialize from props
 onMounted(() => {
   editableVariables.value = { ...props.variables };
   editableHeaders.value = { ...props.headers };
   editableBody.value = props.body ? JSON.stringify(props.body, null, 2) : "";
+  validateBody();
 });
 
 // Watch for prop changes
-watch(
-  () => props.variables,
-  (newVars) => {
-    editableVariables.value = { ...newVars };
-  },
-  { deep: true }
-);
+watch(() => props.variables, (newVars) => {
+  editableVariables.value = { ...newVars };
+}, { deep: true });
 
-watch(
-  () => props.body,
-  (newBody) => {
-    editableBody.value = newBody ? JSON.stringify(newBody, null, 2) : "";
-  },
-  { deep: true }
-);
+watch(() => props.body, (newBody) => {
+  editableBody.value = newBody ? JSON.stringify(newBody, null, 2) : "";
+  validateBody();
+}, { deep: true });
 
-watch(
-  () => props.headers,
-  (newHeaders) => {
-    editableHeaders.value = { ...newHeaders };
-  },
-  { deep: true }
-);
+watch(() => props.headers, (newHeaders) => {
+  editableHeaders.value = { ...newHeaders };
+}, { deep: true });
 
-// Add new header
+// Validate JSON body
+const validateBody = () => {
+  if (!editableBody.value.trim()) {
+    isBodyValid.value = true;
+    bodyError.value = "";
+    return;
+  }
+  try {
+    JSON.parse(editableBody.value);
+    isBodyValid.value = true;
+    bodyError.value = "";
+  } catch (err: any) {
+    isBodyValid.value = false;
+    bodyError.value = err.message || "Invalid JSON";
+  }
+};
+
+watch(editableBody, validateBody);
+
+// Format/prettify JSON
+const formatBody = () => {
+  if (!editableBody.value.trim()) return;
+  try {
+    const parsed = JSON.parse(editableBody.value);
+    editableBody.value = JSON.stringify(parsed, null, 2);
+  } catch {
+    // Can't format invalid JSON
+  }
+};
+
+// Toggle secret visibility
+const toggleSecretVisibility = (key: string) => {
+  if (visibleSecrets.value.has(key)) {
+    visibleSecrets.value.delete(key);
+  } else {
+    visibleSecrets.value.add(key);
+  }
+  visibleSecrets.value = new Set(visibleSecrets.value); // Trigger reactivity
+};
+
+const isSensitiveHeader = (key: string) => {
+  const lowerKey = key.toLowerCase();
+  return lowerKey.includes('auth') || 
+         lowerKey.includes('token') || 
+         lowerKey.includes('secret') || 
+         lowerKey.includes('key') ||
+         lowerKey.includes('password');
+};
+
+const isSecretVisible = (key: string) => visibleSecrets.value.has(key);
+
+// Add/remove headers
 const newHeaderKey = ref("");
 const newHeaderValue = ref("");
 const addHeader = () => {
@@ -106,11 +153,11 @@ const removeHeader = (key: string) => {
 };
 
 const languages = [
-  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-simple-icons-curl" },
-  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-simple-icons-javascript" },
-  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-simple-icons-python" },
-  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-simple-icons-php" },
-  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-simple-icons-go" },
+  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-lucide-terminal" },
+  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-lucide-braces" },
+  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-lucide-code" },
+  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-lucide-file-code" },
+  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-lucide-zap" },
 ];
 
 const methodColors: Record<string, { bg: string; text: string; glow: string }> = {
@@ -121,7 +168,15 @@ const methodColors: Record<string, { bg: string; text: string; glow: string }> =
   DELETE: { bg: "bg-red-500/20", text: "text-red-400", glow: "shadow-red-500/30" },
 };
 
-// --- Logic: Variable Replacement (uses editable variables) ---
+const methodDescriptions: Record<string, string> = {
+  GET: "Retrieve data from the server",
+  POST: "Create a new resource",
+  PUT: "Replace an existing resource",
+  PATCH: "Partially update a resource",
+  DELETE: "Remove a resource",
+};
+
+// --- Logic: Variable Replacement ---
 const replaceVariables = (text: string) => {
   if (!text) return text;
   let result = text;
@@ -131,7 +186,6 @@ const replaceVariables = (text: string) => {
   return result;
 };
 
-// Separate path variables (in URL) from environment variables (in headers/body)
 const pathVariables = computed(() => {
   const vars: Record<string, string> = {};
   const urlPattern = /{(\w+)}/g;
@@ -168,11 +222,8 @@ const processedHeaders = computed(() => {
 const processedBody = computed(() => {
   if (!editableBody.value) return null;
   try {
-    // Parse and apply variable replacement
-    const parsed = JSON.parse(editableBody.value);
-    return parsed;
+    return JSON.parse(editableBody.value);
   } catch {
-    // If invalid JSON, return the raw string
     return replaceVariables(editableBody.value);
   }
 });
@@ -233,10 +284,15 @@ const copyToClipboard = async () => {
 
 // --- Logic: Execute Request ---
 const executeRequest = async () => {
+  if (!isBodyValid.value && editableBody.value.trim()) {
+    return; // Don't execute with invalid JSON
+  }
+
   loading.value = true;
   response.value = null;
   error.value = null;
   showResponse.value = true;
+  flashSuccess.value = false;
 
   const startTime = Date.now();
 
@@ -269,6 +325,14 @@ const executeRequest = async () => {
       duration,
       size: JSON.stringify(body).length,
     };
+
+    // Flash success animation for 2xx responses
+    if (res.status < 300) {
+      flashSuccess.value = true;
+      setTimeout(() => {
+        flashSuccess.value = false;
+      }, 1000);
+    }
   } catch (err: any) {
     error.value = err.message || "An unknown error occurred";
   } finally {
@@ -314,10 +378,13 @@ const formatBytes = (bytes: number) => {
 <template>
   <div
     class="api-playground group my-8 rounded-2xl overflow-hidden transition-all duration-300"
+    :class="{ 'ring-2 ring-green-500/50': flashSuccess }"
     @keydown="handleKeydown"
     tabindex="0"
+    role="region"
+    :aria-label="`API Playground for ${method} ${url}`"
   >
-    <!-- Glassmorphism Container - Now theme-aware -->
+    <!-- Glassmorphism Container -->
     <div
       class="relative backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl
              bg-white dark:bg-gradient-to-br dark:from-slate-900/95 dark:via-slate-900/98 dark:to-slate-950
@@ -332,15 +399,16 @@ const formatBytes = (bytes: number) => {
       <!-- Header -->
       <div class="relative px-6 py-5 border-b border-gray-200 dark:border-slate-700/50">
         <div class="flex items-center gap-4">
-          <!-- Method Badge with Glow -->
+          <!-- Method Badge with Tooltip -->
           <div
-            class="relative"
+            class="relative group/method cursor-help"
             :class="methodColors[method]?.glow"
             style="filter: drop-shadow(0 0 12px currentColor)"
           >
             <span
               class="inline-flex items-center px-3 py-1.5 rounded-lg font-mono font-bold text-sm tracking-wide transition-all duration-300"
               :class="[methodColors[method]?.bg, methodColors[method]?.text]"
+              :title="methodDescriptions[method]"
             >
               <span class="relative flex h-2 w-2 mr-2">
                 <span
@@ -354,6 +422,10 @@ const formatBytes = (bytes: number) => {
               </span>
               {{ method }}
             </span>
+            <!-- Method Tooltip -->
+            <div class="absolute left-0 top-full mt-2 px-3 py-2 bg-gray-900 dark:bg-slate-800 text-white text-xs rounded-lg opacity-0 group-hover/method:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 shadow-lg">
+              {{ methodDescriptions[method] }}
+            </div>
           </div>
 
           <!-- URL -->
@@ -368,32 +440,77 @@ const formatBytes = (bytes: number) => {
         </p>
       </div>
 
+      <!-- Mobile View Toggle -->
+      <div class="lg:hidden flex border-b border-gray-200 dark:border-slate-700/50">
+        <button
+          class="flex-1 px-4 py-3 text-sm font-medium transition-all duration-200"
+          :class="mobileView === 'request' 
+            ? 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white border-b-2 border-blue-500' 
+            : 'text-gray-500 dark:text-slate-400'"
+          @click="mobileView = 'request'"
+        >
+          <UIcon name="i-lucide-settings-2" class="w-4 h-4 inline mr-2" />
+          Request
+        </button>
+        <button
+          class="flex-1 px-4 py-3 text-sm font-medium transition-all duration-200"
+          :class="mobileView === 'code' 
+            ? 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white border-b-2 border-blue-500' 
+            : 'text-gray-500 dark:text-slate-400'"
+          @click="mobileView = 'code'"
+        >
+          <UIcon name="i-lucide-code" class="w-4 h-4 inline mr-2" />
+          Code & Response
+        </button>
+      </div>
+
       <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2">
         <!-- Left Panel: Request Builder -->
-        <div class="border-r border-gray-200 dark:border-slate-700/50 p-5">
+        <div 
+          class="border-r border-gray-200 dark:border-slate-700/50 p-5"
+          :class="{ 'hidden lg:block': mobileView === 'code' }"
+        >
           <!-- Request Tabs -->
           <div class="flex items-center gap-1 mb-4 p-1 bg-gray-100 dark:bg-slate-800/50 rounded-lg w-fit">
             <button
-              v-for="tab in ['params', 'headers', 'body']"
-              :key="tab"
-              class="px-4 py-2 text-xs font-medium rounded-md transition-all duration-200"
-              :class="
-                activeRequestTab === tab
-                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-md'
-                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
-              "
-              @click="activeRequestTab = tab"
+              class="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all duration-200"
+              :class="activeRequestTab === 'params' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+              @click="activeRequestTab = 'params'"
+              :aria-selected="activeRequestTab === 'params'"
+              role="tab"
             >
-              {{ t(`api_playground.tabs.${tab}`) }}
+              <UIcon name="i-lucide-variable" class="w-3.5 h-3.5" />
+              {{ t('api_playground.tabs.params') }}
+            </button>
+            <button
+              class="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all duration-200"
+              :class="activeRequestTab === 'headers' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+              @click="activeRequestTab = 'headers'"
+              :aria-selected="activeRequestTab === 'headers'"
+              role="tab"
+            >
+              <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5" />
+              {{ t('api_playground.tabs.headers') }}
+            </button>
+            <button
+              class="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all duration-200"
+              :class="activeRequestTab === 'body' ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-md' : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'"
+              @click="activeRequestTab = 'body'"
+              :aria-selected="activeRequestTab === 'body'"
+              role="tab"
+            >
+              <UIcon name="i-lucide-braces" class="w-3.5 h-3.5" />
+              {{ t('api_playground.tabs.body') }}
             </button>
           </div>
 
-          <!-- Variables/Params Section - NOW EDITABLE -->
+          <!-- Variables/Params Section -->
           <div v-if="activeRequestTab === 'params'" class="space-y-6">
-            <!-- Path Variables (in URL) -->
+            <!-- Path Variables -->
             <div v-if="Object.keys(pathVariables).length > 0">
-              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+              <h4 class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+                <UIcon name="i-lucide-route" class="w-3.5 h-3.5 text-blue-500" />
                 {{ t('api_playground.variables.path') }}
               </h4>
               <div class="space-y-3">
@@ -409,14 +526,16 @@ const formatBytes = (bytes: number) => {
                     v-model="editableVariables[key]"
                     type="text"
                     class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    :aria-label="`Path variable ${key}`"
                   />
                 </div>
               </div>
             </div>
 
-            <!-- Environment Variables (in headers/body) -->
+            <!-- Environment Variables -->
             <div v-if="Object.keys(envVariables).length > 0">
-              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+              <h4 class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">
+                <UIcon name="i-lucide-key-round" class="w-3.5 h-3.5 text-purple-500" />
                 {{ t('api_playground.variables.env') }}
               </h4>
               <div class="space-y-3">
@@ -432,20 +551,29 @@ const formatBytes = (bytes: number) => {
                     v-model="editableVariables[key]"
                     type="text"
                     class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    :aria-label="`Environment variable ${key}`"
                   />
                 </div>
               </div>
             </div>
 
-            <div v-if="Object.keys(editableVariables).length === 0" class="text-center py-8 text-gray-400 dark:text-slate-500 text-sm">
-              {{ t('api_playground.variables.none') }}
+            <!-- Empty State - Enhanced -->
+            <div v-if="Object.keys(editableVariables).length === 0" class="flex flex-col items-center py-10 text-gray-400 dark:text-slate-500">
+              <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800/50 flex items-center justify-center mb-4">
+                <UIcon name="i-lucide-variable" class="w-8 h-8 opacity-50" />
+              </div>
+              <p class="text-sm font-medium">{{ t('api_playground.variables.none') }}</p>
+              <p class="text-xs opacity-75 mt-1 text-center max-w-[200px]">
+                Variables like <code class="bg-gray-200 dark:bg-slate-700 px-1 rounded">{`{token}`}</code> in the URL or headers will appear here
+              </p>
             </div>
           </div>
 
-          <!-- Headers Section - NOW EDITABLE -->
+          <!-- Headers Section - Enhanced with Secret Toggle -->
           <div v-if="activeRequestTab === 'headers'" class="space-y-4">
             <div class="flex items-center justify-between mb-3">
-              <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+              <h4 class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <UIcon name="i-lucide-file-text" class="w-3.5 h-3.5 text-emerald-500" />
                 {{ t('api_playground.headers.title') }}
               </h4>
               <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ t('api_playground.headers.editable') }}</span>
@@ -458,17 +586,36 @@ const formatBytes = (bytes: number) => {
                 :key="key"
                 class="flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800/30 rounded-lg border border-gray-200 dark:border-slate-700/30"
               >
+                <!-- Sensitive indicator -->
+                <UIcon 
+                  v-if="isSensitiveHeader(String(key))" 
+                  name="i-lucide-lock" 
+                  class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" 
+                  title="Sensitive header"
+                />
                 <span class="text-xs font-mono text-emerald-600 dark:text-emerald-400 min-w-[100px] shrink-0">{{ key }}</span>
                 <span class="text-gray-400 dark:text-slate-500">:</span>
                 <input
                   v-model="editableHeaders[key]"
-                  type="text"
+                  :type="isSensitiveHeader(String(key)) && !isSecretVisible(String(key)) ? 'password' : 'text'"
                   class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  :aria-label="`Header ${key}`"
                 />
+                <!-- Toggle visibility for sensitive headers -->
+                <button
+                  v-if="isSensitiveHeader(String(key))"
+                  @click="toggleSecretVisibility(String(key))"
+                  class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+                  :title="isSecretVisible(String(key)) ? 'Hide value' : 'Show value'"
+                  :aria-label="isSecretVisible(String(key)) ? 'Hide value' : 'Show value'"
+                >
+                  <UIcon :name="isSecretVisible(String(key)) ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-4 h-4" />
+                </button>
                 <button
                   @click="removeHeader(String(key))"
                   class="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                   :title="t('api_playground.headers.remove')"
+                  :aria-label="`Remove header ${key}`"
                 >
                   <UIcon name="i-lucide-x" class="w-4 h-4" />
                 </button>
@@ -482,6 +629,7 @@ const formatBytes = (bytes: number) => {
                 type="text"
                 placeholder="Header-Name"
                 class="w-32 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                aria-label="New header name"
               />
               <span class="text-gray-400 dark:text-slate-500">:</span>
               <input
@@ -490,32 +638,59 @@ const formatBytes = (bytes: number) => {
                 placeholder="value"
                 class="flex-1 text-sm font-mono bg-white dark:bg-slate-900/50 text-gray-900 dark:text-slate-300 px-3 py-1.5 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 @keyup.enter="addHeader"
+                aria-label="New header value"
               />
               <button
                 @click="addHeader"
                 class="p-1.5 text-emerald-500 hover:text-emerald-600 transition-colors"
                 :title="t('api_playground.headers.add')"
+                aria-label="Add new header"
               >
                 <UIcon name="i-lucide-plus" class="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <!-- Body Section - NOW EDITABLE -->
+          <!-- Body Section - Enhanced with Validation -->
           <div v-if="activeRequestTab === 'body'" class="space-y-4">
             <div>
               <div class="flex items-center justify-between mb-3">
-                <h4 class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                <h4 class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                  <UIcon name="i-lucide-braces" class="w-3.5 h-3.5 text-amber-500" />
                   {{ t('api_playground.body.title') }}
                 </h4>
-                <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ t('api_playground.headers.editable') }}</span>
+                <div class="flex items-center gap-2">
+                  <!-- Format Button -->
+                  <button
+                    @click="formatBody"
+                    class="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 bg-gray-200 dark:bg-slate-700/50 hover:bg-gray-300 dark:hover:bg-slate-700 rounded transition-all duration-200"
+                    title="Format JSON"
+                    :disabled="!isBodyValid"
+                  >
+                    <UIcon name="i-lucide-wand-2" class="w-3 h-3" />
+                    Format
+                  </button>
+                  <span class="text-[10px] text-gray-400 dark:text-slate-500">{{ t('api_playground.headers.editable') }}</span>
+                </div>
               </div>
               <textarea
                 v-model="editableBody"
                 rows="10"
                 placeholder='{"key": "value"}'
-                class="w-full p-4 bg-gray-50 dark:bg-slate-950/50 rounded-lg border border-gray-200 dark:border-slate-700/30 text-sm font-mono text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+                class="w-full p-4 bg-gray-50 dark:bg-slate-950/50 rounded-lg text-sm font-mono text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:border-transparent resize-y transition-all duration-200"
+                :class="[
+                  isBodyValid 
+                    ? 'border border-gray-200 dark:border-slate-700/30 focus:ring-blue-500' 
+                    : 'border-2 border-red-500 dark:border-red-500/50 focus:ring-red-500'
+                ]"
+                aria-label="Request body"
+                :aria-invalid="!isBodyValid"
               />
+              <!-- Validation Error -->
+              <div v-if="!isBodyValid" class="flex items-center gap-2 mt-2 text-red-500 dark:text-red-400">
+                <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" />
+                <p class="text-xs">{{ bodyError }}</p>
+              </div>
             </div>
           </div>
 
@@ -525,9 +700,12 @@ const formatBytes = (bytes: number) => {
               block
               size="lg"
               :loading="loading"
+              :disabled="!isBodyValid && editableBody.trim() !== ''"
               icon="i-lucide-play"
-              class="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 shadow-lg shadow-blue-500/25 transition-all duration-300"
+              class="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 shadow-lg shadow-blue-500/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               @click="executeRequest"
+              aria-label="Send API request"
+              aria-describedby="request-hint"
             >
               <span class="font-semibold">{{ t('api_playground.actions.send_request') }}</span>
               <kbd
@@ -536,40 +714,54 @@ const formatBytes = (bytes: number) => {
                 ⌘↵
               </kbd>
             </UButton>
-            <p class="text-[10px] text-gray-400 dark:text-slate-500 mt-2 text-center">
+            <p id="request-hint" class="text-[10px] text-gray-400 dark:text-slate-500 mt-2 text-center">
               {{ t('api_playground.disclaimer') }}
             </p>
           </div>
         </div>
 
         <!-- Right Panel: Code Snippets & Response -->
-        <div class="flex flex-col bg-gray-50 dark:bg-slate-950/30">
-          <!-- Language Selector -->
+        <div 
+          class="flex flex-col bg-gray-50 dark:bg-slate-950/30"
+          :class="{ 'hidden lg:flex': mobileView === 'request' }"
+        >
+          <!-- Language Selector - Scrollable -->
           <div
             class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/50 bg-gray-100 dark:bg-slate-900/50"
           >
-            <div class="flex gap-1">
+            <div class="flex gap-1 overflow-x-auto scrollbar-hide">
               <button
                 v-for="(lang, index) in languages"
                 :key="lang.label"
-                class="relative px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200"
+                class="relative flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap"
                 :class="
                   activeLanguage === index
                     ? 'text-white bg-gray-700 dark:bg-slate-700'
                     : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-800/50'
                 "
                 @click="activeLanguage = index"
+                :aria-selected="activeLanguage === index"
+                role="tab"
               >
+                <UIcon :name="lang.icon" class="w-3.5 h-3.5" />
                 {{ lang.label }}
               </button>
             </div>
 
-            <!-- Copy Button -->
+            <!-- Copy Button - Enhanced -->
             <button
-              class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white bg-gray-200 dark:bg-slate-800/50 hover:bg-gray-300 dark:hover:bg-slate-700 rounded-md transition-all duration-200"
+              class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200"
+              :class="copied 
+                ? 'text-green-500 bg-green-100 dark:bg-green-500/20' 
+                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white bg-gray-200 dark:bg-slate-800/50 hover:bg-gray-300 dark:hover:bg-slate-700'"
               @click="copyToClipboard"
+              aria-label="Copy code snippet"
             >
-              <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-3.5 h-3.5" />
+              <UIcon 
+                :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" 
+                class="w-3.5 h-3.5 transition-transform duration-200"
+                :class="{ 'scale-110': copied }"
+              />
               <span>{{ copied ? t('api_playground.actions.copied') : t('api_playground.actions.copy') }}</span>
             </button>
           </div>
@@ -594,13 +786,15 @@ const formatBytes = (bytes: number) => {
 
           <!-- Response Section -->
           <div
-            v-if="showResponse"
             class="border-t border-gray-200 dark:border-slate-700/50 bg-white dark:bg-slate-900/50"
           >
             <!-- Response Header -->
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700/30">
               <div class="flex items-center gap-3">
-                <span class="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">{{ t('api_playground.response.title') }}</span>
+                <span class="flex items-center gap-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                  <UIcon name="i-lucide-arrow-down-circle" class="w-3.5 h-3.5 text-cyan-500" />
+                  {{ t('api_playground.response.title') }}
+                </span>
                 <div v-if="response" class="flex items-center gap-2">
                   <UBadge :color="responseStatusColor" variant="subtle" size="xs">
                     <span class="flex items-center gap-1.5">
@@ -628,6 +822,8 @@ const formatBytes = (bytes: number) => {
                       : 'text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
                   "
                   @click="activeResponseTab = tab"
+                  :aria-selected="activeResponseTab === tab"
+                  role="tab"
                 >
                   {{ t(`api_playground.tabs.${tab}`) }}
                 </button>
@@ -679,10 +875,15 @@ const formatBytes = (bytes: number) => {
                 </div>
               </div>
 
-              <!-- Empty State -->
+              <!-- Empty State - Enhanced -->
               <div v-else class="p-8 text-center">
-                <UIcon name="i-lucide-arrow-up" class="w-8 h-8 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
-                <p class="text-sm text-gray-400 dark:text-slate-500">{{ t('api_playground.response.empty') }}</p>
+                <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800/50 flex items-center justify-center mx-auto mb-4">
+                  <UIcon name="i-lucide-send" class="w-8 h-8 text-gray-300 dark:text-slate-600" />
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-slate-400">{{ t('api_playground.response.empty') }}</p>
+                <p class="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                  Click "Send Request" or press <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-slate-700 rounded text-[10px] font-mono">⌘↵</kbd> to execute
+                </p>
               </div>
             </div>
           </div>
@@ -724,6 +925,16 @@ const formatBytes = (bytes: number) => {
   background: rgba(100, 116, 139, 0.5);
 }
 
+/* Hide scrollbar for language tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Code highlighting enhancements */
 .api-playground pre code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
@@ -738,5 +949,22 @@ const formatBytes = (bytes: number) => {
 .api-playground button:focus-visible {
   outline: 2px solid rgba(99, 102, 241, 0.5);
   outline-offset: 2px;
+}
+
+/* Success flash animation */
+.api-playground.ring-2 {
+  animation: successPulse 1s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
 }
 </style>
