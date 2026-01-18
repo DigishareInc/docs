@@ -433,9 +433,9 @@ const formatBytes = (bytes: number) => {
 
 <template>
   <div
-    class="api-playground group my-10 mb-16 rounded-3xl overflow-hidden transition-all duration-500 ease-in-out"
+    class="api-playground group my-8 mb-12 rounded-2xl overflow-hidden transition-all duration-500 ease-in-out"
     :class="{ 
-      'ring-1 ring-indigo-500/50 shadow-2xl': flashSuccess,
+      'ring-1 ring-indigo-500/40 shadow-2xl': flashSuccess,
       'shadow-xl': !flashSuccess
     }"
     @keydown="handleKeydown"
@@ -445,8 +445,8 @@ const formatBytes = (bytes: number) => {
   >
     <!-- Glassmorphism Container -->
     <div
-      class="relative backdrop-blur-2xl rounded-3xl overflow-hidden
-             bg-white dark:bg-[#0c111c]/95 
+      class="relative backdrop-blur-xl rounded-2xl overflow-hidden
+             bg-white dark:bg-[#0c111c]/98 
              border border-gray-200 dark:border-white/10"
     >
       <!-- Premium Background Effects -->
@@ -461,13 +461,13 @@ const formatBytes = (bytes: number) => {
       />
 
       <!-- Header -->
-      <div class="relative px-8 py-6 border-b border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/5">
+      <div class="relative px-6 py-4 border-b border-gray-200 dark:border-white/5 bg-gray-50/30 dark:bg-white/5">
         <div class="flex flex-col md:flex-row md:items-center gap-4">
           <div class="flex items-center gap-4 flex-1">
             <!-- Method Badge -->
-            <div class="relative shrink-0">
+            <div class="shrink-0">
               <span
-                class="inline-flex items-center px-3 py-1.5 rounded-lg font-mono font-black text-[11px] tracking-widest transition-all duration-300 border shadow-sm"
+                class="inline-flex items-center px-2.5 py-1 rounded-md font-mono font-black text-[10px] tracking-widest transition-all duration-300 border shadow-sm"
                 :class="[methodColors[method]?.bg, methodColors[method]?.text, methodColors[method]?.border]"
               >
                 {{ method }}
@@ -476,27 +476,27 @@ const formatBytes = (bytes: number) => {
 
             <!-- URL with Variable Highlighting -->
             <div class="flex-1 min-w-0 group/url relative">
-              <div class="flex items-center gap-2 p-1.5 px-3 rounded-xl bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 shadow-inner group-hover/url:border-indigo-500/30 transition-colors">
-                <UIcon name="i-lucide-globe" class="w-4 h-4 text-gray-400" />
-                <code class="text-[13px] font-mono text-gray-600 dark:text-gray-400 truncate tracking-tight">
-                  <span v-for="(part, i) in url.split(/({[\w]+})/)" :key="i" :class="{ 'text-indigo-500 font-black': part.startsWith('{') }">
+              <div class="flex items-center gap-2 p-1 px-3 rounded-lg bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 shadow-sm group-hover/url:border-indigo-500/20 transition-colors">
+                <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 text-gray-400" />
+                <code class="text-[12px] font-mono text-gray-600 dark:text-gray-400 truncate tracking-tight">
+                  <span v-for="(part, i) in url.split(/({[\w]+})/)" :key="i" :class="{ 'text-indigo-500 font-bold': part.startsWith('{') }">
                     {{ part.startsWith('{') ? editableVariables[part.slice(1, -1)] || part : part }}
                   </span>
                 </code>
-                <button @click="copyToClipboard" class="ml-auto p-1.5 opacity-0 group-hover/url:opacity-100 transition-opacity text-gray-400 hover:text-indigo-400">
-                  <UIcon name="i-lucide-copy" class="w-3.5 h-3.5" />
+                <button @click="copyToClipboard" class="ml-auto p-1 opacity-0 group-hover/url:opacity-100 transition-opacity text-gray-400 hover:text-indigo-400">
+                  <UIcon name="i-lucide-copy" class="w-3 h-3" />
                 </button>
               </div>
             </div>
           </div>
 
           <!-- Actions Header -->
-          <div class="flex items-center gap-2">
+          <div class="flex gap-2 shrink-0">
             <UButton
               color="indigo"
               size="sm"
               icon="i-lucide-play-circle"
-              class="font-black uppercase tracking-widest text-[10px] px-4"
+              class="font-black uppercase tracking-widest text-[10px] px-3.5 h-8"
               @click="isModalOpen = true"
             >
               Test API
@@ -505,17 +505,17 @@ const formatBytes = (bytes: number) => {
         </div>
 
         <!-- Description -->
-        <p v-if="description" class="mt-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
+        <p v-if="description" class="mt-2.5 text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
           {{ description }}
         </p>
       </div>
 
       <!-- Main Content Area (Docs Only) -->
-      <div class="flex flex-col bg-gray-50/50 dark:bg-black/20 overflow-hidden">
+      <div class="flex flex-col bg-gray-50/30 dark:bg-black/10 overflow-hidden">
         <!-- Snippet Explorer -->
-        <div class="flex flex-col flex-1">
+        <div class="flex-1 flex flex-col">
           <!-- Selector -->
-          <div class="flex items-center justify-between px-6 py-4 bg-gray-100/50 dark:bg-white/5 border-b border-gray-200 dark:border-white/5">
+          <div class="flex items-center justify-between px-6 py-2.5 bg-gray-100/30 dark:bg-white/5 border-b border-gray-200 dark:border-white/5">
             <div class="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
               <button
                 v-for="(lang, index) in languages"
@@ -545,7 +545,7 @@ const formatBytes = (bytes: number) => {
           </div>
 
           <!-- Code Display -->
-          <div class="relative group/code flex-1 bg-gray-900 dark:bg-black/40 min-h-[300px] overflow-hidden">
+          <div class="relative group/code flex-1 bg-gray-950 dark:bg-black/60 min-h-[240px] overflow-hidden">
              <div class="absolute top-4 right-4 z-10 opacity-0 group-hover/code:opacity-100 transition-opacity">
                <UBadge color="gray" variant="solid" size="xs" class="font-mono uppercase">{{ languages[activeLanguage].lang }}</UBadge>
              </div>
@@ -556,7 +556,7 @@ const formatBytes = (bytes: number) => {
                   <div v-for="(_, i) in snippetLines" :key="i">{{ i + 1 }}</div>
                 </div>
                 <!-- Snippet -->
-                <pre class="p-6 overflow-x-auto w-full"><code v-html="highlightedSnippet" class="text-gray-300"></code></pre>
+                <pre class="p-5 overflow-x-auto w-full"><code v-html="highlightedSnippet" class="text-gray-300"></code></pre>
              </div>
           </div>
         </div>
@@ -567,7 +567,7 @@ const formatBytes = (bytes: number) => {
       <template #content>
         <div class="flex flex-col h-full bg-slate-50 dark:bg-[#0b0f19] overflow-hidden">
           <!-- Modal Header -->
-          <div class="flex items-center justify-between px-8 py-4 border-b border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl">
+          <div class="flex justify-between items-center px-8 py-4 border-b border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl">
             <div class="flex gap-4 items-center">
               <span class="inline-flex items-center px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 font-mono text-[10px] font-black uppercase">{{ method }}</span>
               <span class="text-sm font-mono text-gray-500 max-w-md truncate">{{ processedUrl }}</span>
