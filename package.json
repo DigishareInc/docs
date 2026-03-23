@@ -6,7 +6,7 @@
     "generate": "nuxt generate --extends docus"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.5.1",
+    "@nuxt/ui": "^4.6.0",
     "@nuxtjs/i18n": "^10.2.3",
     "@scalar/snippetz": "^0.7.6",
     "@types/highlight.js": "^10.1.0",

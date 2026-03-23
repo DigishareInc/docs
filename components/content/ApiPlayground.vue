@@ -1,24 +1,39 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
-import { snippetz } from "@scalar/snippetz";
-import hljs from "highlight.js/lib/core";
-import json from "highlight.js/lib/languages/json";
-import xml from "highlight.js/lib/languages/xml";
-import javascript from "highlight.js/lib/languages/javascript";
-import python from "highlight.js/lib/languages/python";
-import bash from "highlight.js/lib/languages/bash";
-import php from "highlight.js/lib/languages/php";
-import go from "highlight.js/lib/languages/go";
 
-hljs.registerLanguage("json", json);
-hljs.registerLanguage("xml", xml);
-hljs.registerLanguage("javascript", javascript);
-hljs.registerLanguage("python", python);
-hljs.registerLanguage("bash", bash);
-hljs.registerLanguage("shell", bash);
-hljs.registerLanguage("php", php);
-hljs.registerLanguage("go", go);
+// Lazy-loaded on client only (these crash SSR due to web-worker dependency)
+const snippetzFn = shallowRef<any>(null);
+const hljsInstance = shallowRef<any>(null);
+const isClientReady = ref(false);
+
+onMounted(async () => {
+  // Dynamic imports for browser-only libs
+  const [{ snippetz }, hljs, json, xml, javascript, python, bash, php, go] = await Promise.all([
+    import("@scalar/snippetz"),
+    import("highlight.js/lib/core"),
+    import("highlight.js/lib/languages/json"),
+    import("highlight.js/lib/languages/xml"),
+    import("highlight.js/lib/languages/javascript"),
+    import("highlight.js/lib/languages/python"),
+    import("highlight.js/lib/languages/bash"),
+    import("highlight.js/lib/languages/php"),
+    import("highlight.js/lib/languages/go")
+  ]);
+
+  hljs.default.registerLanguage("json", json.default);
+  hljs.default.registerLanguage("xml", xml.default);
+  hljs.default.registerLanguage("javascript", javascript.default);
+  hljs.default.registerLanguage("python", python.default);
+  hljs.default.registerLanguage("bash", bash.default);
+  hljs.default.registerLanguage("shell", bash.default);
+  hljs.default.registerLanguage("php", php.default);
+  hljs.default.registerLanguage("go", go.default);
+
+  snippetzFn.value = snippetz;
+  hljsInstance.value = hljs.default;
+  isClientReady.value = true;
+});
 
 interface Props {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -27,6 +42,7 @@ interface Props {
   variables?: Record<string, string>;
   headers?: Record<string, string>;
   body?: any;
+  responseSample?: any;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -36,6 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   variables: () => ({}),
   headers: () => ({}),
   body: null,
+  responseSample: null,
 });
 
 const { t } = useI18n();
@@ -44,8 +61,9 @@ const { t } = useI18n();
 const activeLanguage = ref(0);
 const activeRequestTab = ref("params");
 const activeResponseTab = ref("body");
+const mainViewMode = ref<'request' | 'sample' | 'live'>('request'); // Main tabs
 const loading = ref(false);
-const response = ref<any>(null);
+const response = ref<any>(null); // This is the live response object
 const error = ref<string | null>(null);
 const copied = ref(false);
 const showResponse = ref(false);
@@ -66,26 +84,43 @@ const visibleSecrets = ref<Set<string>>(new Set());
 const isBodyValid = ref(true);
 const bodyError = ref<string>("");
 
+// Robust Prop Parsing (for MDC)
+const ensureObject = (val: any): Record<string, any> => {
+  if (!val) return {};
+  if (typeof val === 'object' && !Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      // Replace single quotes with double quotes for JSON.parse if needed
+      const jsonStr = val.trim().startsWith('{') ? val : `{${val}}`;
+      return JSON.parse(jsonStr.replace(/'/g, '"'));
+    } catch (e) {
+      console.warn('ApiPlayground: Failed to parse prop as object', val, e);
+      return {};
+    }
+  }
+  return {};
+};
+
 // Initialize from props
 onMounted(() => {
-  editableVariables.value = { ...props.variables };
-  editableHeaders.value = { ...props.headers };
-  editableBody.value = props.body ? JSON.stringify(props.body, null, 2) : "";
+  editableVariables.value = ensureObject(props.variables);
+  editableHeaders.value = ensureObject(props.headers);
+  editableBody.value = props.body ? (typeof props.body === 'string' ? props.body : JSON.stringify(props.body, null, 2)) : "";
   validateBody();
 });
 
 // Watch for prop changes
 watch(() => props.variables, (newVars) => {
-  editableVariables.value = { ...newVars };
-}, { deep: true });
-
-watch(() => props.body, (newBody) => {
-  editableBody.value = newBody ? JSON.stringify(newBody, null, 2) : "";
-  validateBody();
+  editableVariables.value = ensureObject(newVars);
 }, { deep: true });
 
 watch(() => props.headers, (newHeaders) => {
-  editableHeaders.value = { ...newHeaders };
+  editableHeaders.value = ensureObject(newHeaders);
+}, { deep: true });
+
+watch(() => props.body, (newBody) => {
+  editableBody.value = newBody ? (typeof newBody === 'string' ? newBody : JSON.stringify(newBody, null, 2)) : "";
+  validateBody();
 }, { deep: true });
 
 // Validate JSON body
@@ -107,7 +142,13 @@ const validateBody = () => {
 
 watch(editableBody, validateBody);
 
-// Format/prettify JSON
+// Initialize main view mode if sample exists
+onMounted(() => {
+  if (props.responseSample && !response.value) {
+    // We stay on request by default but we could auto-switch if preferred.
+    // Let's stay on request to show the endpoint first.
+  }
+});
 const formatBody = () => {
   if (!editableBody.value.trim()) return;
   try {
@@ -253,13 +294,20 @@ const processedBody = computed(() => {
 
 // --- Logic: Code Snippet Generation ---
 const generateSnippet = (lang: string, client: string) => {
+  const headersList = Object.entries(processedHeaders.value).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  // Ensure 'Accept' header is present for a more professional look
+  if (!headersList.some(h => h.name.toLowerCase() === 'accept')) {
+    headersList.push({ name: 'Accept', value: 'application/json' });
+  }
+
   const requestSpec: any = {
     url: processedUrl.value,
     method: props.method,
-    headers: Object.entries(processedHeaders.value).map(([name, value]) => ({
-      name,
-      value,
-    })),
+    headers: headersList,
   };
 
   if (editableBody.value && ["POST", "PUT", "PATCH"].includes(props.method)) {
@@ -270,7 +318,8 @@ const generateSnippet = (lang: string, client: string) => {
   }
 
   try {
-    const result = snippetz().print(lang, client, requestSpec);
+    if (!snippetzFn.value) return `// Loading generator...`;
+    const result = snippetzFn.value().print(lang, client, requestSpec);
     return result || `// Error generating snippet`;
   } catch (err) {
     return `// Error generating snippet: ${err}`;
@@ -285,12 +334,14 @@ const currentSnippet = computed(() => {
 const highlightedSnippet = computed(() => {
   const { hlLang } = languages[activeLanguage.value];
   if (!currentSnippet.value) return "";
-  return hljs.highlight(currentSnippet.value, { language: hlLang }).value;
+  if (!hljsInstance.value) return currentSnippet.value;
+  return hljsInstance.value.highlight(currentSnippet.value, { language: hlLang }).value;
 });
 
 const curlSnippet = computed(() => {
   const result = generateSnippet("shell", "curl");
-  return hljs.highlight(result, { language: "bash" }).value;
+  if (!hljsInstance.value) return result;
+  return hljsInstance.value.highlight(result, { language: "bash" }).value;
 });
 
 const snippetLines = computed(() => {
@@ -313,13 +364,15 @@ const copyToClipboard = async () => {
 };
 
 const copyResponse = async () => {
-  if (!response.value) return;
+  const dataToCopy = response.value ? response.value.body : props.responseSample;
+  if (!dataToCopy) return;
   try {
-    const text = typeof response.value.body === 'object' 
-      ? JSON.stringify(response.value.body, null, 2) 
-      : response.value.body;
+    const text = typeof dataToCopy === 'object' 
+      ? JSON.stringify(dataToCopy, null, 2) 
+      : dataToCopy;
     await navigator.clipboard.writeText(text);
-    // You could add a temporary state for this too
+    copied.value = true;
+    setTimeout(() => copied.value = false, 2000);
   } catch (err) {
     console.error("Failed to copy response:", err);
   }
@@ -376,15 +429,16 @@ const executeRequest = async () => {
       size: typeof body === 'string' ? body.length : JSON.stringify(body).length,
     };
 
-    // Flash success animation for 2xx responses
     if (res.status < 300) {
       flashSuccess.value = true;
+      mainViewMode.value = 'live'; // Switch to Live view to see the result
       setTimeout(() => {
         flashSuccess.value = false;
       }, 1000);
     }
   } catch (err: any) {
     error.value = err.message || "An unknown error occurred";
+    mainViewMode.value = 'live'; // Switch to Live view to show error
   } finally {
     loading.value = false;
   }
@@ -407,7 +461,8 @@ const formattedResponseBody = computed(() => {
 
   if (typeof response.value.body === "object") {
     try {
-       return hljs.highlight(content, { language: "json" }).value;
+       if (!hljsInstance.value) return content;
+       return hljsInstance.value.highlight(content, { language: "json" }).value;
     } catch {
        return content;
     }
@@ -416,13 +471,29 @@ const formattedResponseBody = computed(() => {
   // Handle HTML/XML responses gracefully
   if (typeof content === 'string' && content.trim().startsWith('<')) {
     try {
-      return hljs.highlight(content, { language: "xml" }).value;
+      if (!hljsInstance.value) return content;
+      return hljsInstance.value.highlight(content, { language: "xml" }).value;
     } catch {
       return content;
     }
   }
 
   return content;
+});
+
+const formattedResponseSample = computed(() => {
+  if (!props.responseSample) return "";
+  try {
+    const data = typeof props.responseSample === 'string' ? JSON.parse(props.responseSample) : props.responseSample;
+    return JSON.stringify(data, null, 2);
+  } catch {
+    return String(props.responseSample);
+  }
+});
+
+const highlightedResponseSample = computed(() => {
+  if (!formattedResponseSample.value || !hljsInstance.value) return formattedResponseSample.value;
+  return hljsInstance.value.highlight(formattedResponseSample.value, { language: "json" }).value;
 });
 
 const responseStatusColor = computed(() => {
@@ -457,81 +528,69 @@ const formatBytes = (bytes: number) => {
              bg-white dark:bg-[#0c111c]/98 
              border border-gray-200 dark:border-white/10"
     >
-      <!-- Premium Background Effects -->
-      <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-20 dark:opacity-40">
-        <div class="absolute -top-[20%] -right-[10%] w-[40%] h-[60%] bg-gray-500/5 blur-[120px] rounded-full" />
-        <div class="absolute -bottom-[20%] -left-[10%] w-[40%] h-[60%] bg-gray-500/5 blur-[120px] rounded-full" />
-      </div>
       <!-- Gradient Border Glow -->
       <div
         class="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))"
+        style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.04), rgba(139, 92, 246, 0.04))"
       />
 
-      <!-- Header -->
-      <div class="relative px-6 py-4 border-b border-gray-200 dark:border-white/5 bg-gray-50/30 dark:bg-white/5">
-        <div class="flex flex-col md:flex-row md:items-center gap-4">
-          <div class="flex items-center gap-4 flex-1">
-            <!-- Method Badge -->
-            <div class="shrink-0">
-              <span
-                class="inline-flex items-center px-2.5 py-1 rounded-md font-mono font-black text-[10px] tracking-widest transition-all duration-300 border shadow-sm"
-                :class="[methodColors[method]?.bg, methodColors[method]?.text, methodColors[method]?.border]"
-              >
-                {{ method }}
-              </span>
-            </div>
-
-            <!-- URL with Variable Highlighting -->
-            <div class="flex-1 min-w-0 group/url relative">
-              <div class="flex items-center gap-2 p-1 px-3 rounded-lg bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 shadow-sm group-hover/url:border-indigo-500/20 transition-colors">
-                <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 text-gray-400" />
-                <code class="text-[12px] font-mono text-gray-600 dark:text-gray-400 truncate tracking-tight">
-                  <span v-for="(part, i) in url.split(/({[\w]+})/)" :key="i" :class="{ 'text-indigo-500 font-bold': part.startsWith('{') }">
-                    {{ part.startsWith('{') ? editableVariables[part.slice(1, -1)] || part : part }}
-                  </span>
-                </code>
-                <button @click="copyToClipboard" class="ml-auto p-1 opacity-0 group-hover/url:opacity-100 transition-opacity text-gray-400 hover:text-indigo-400">
-                  <UIcon name="i-lucide-copy" class="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions Header -->
-          <div class="flex gap-2 shrink-0">
-            <UButton
-              color="indigo"
-              size="sm"
-              icon="i-lucide-play-circle"
-              class="font-black uppercase tracking-widest text-[10px] px-3.5 h-8"
-              @click="isModalOpen = true"
-            >
-              Test API
-            </UButton>
-          </div>
-        </div>
-
-        <!-- Description -->
-        <p v-if="description" class="mt-2.5 text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
+      <!-- Compact Header (Description Only) -->
+      <div v-if="description" class="relative px-5 py-3 border-b border-gray-200 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.03]">
+        <p class="text-[12px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
           {{ description }}
         </p>
       </div>
 
-      <!-- Main Content Area (Docs Only) -->
-      <div class="flex flex-col bg-gray-50/30 dark:bg-black/10 overflow-hidden">
-        <!-- Snippet Explorer -->
-        <div class="flex-1 flex flex-col">
-          <!-- Selector -->
-          <div class="flex items-center justify-between px-6 py-2.5 bg-gray-100/30 dark:bg-white/5 border-b border-gray-200 dark:border-white/5">
-            <div class="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
+      <!-- Language Tabs + Code -->
+      <div class="flex flex-col">
+        <!-- Language Tabs + Code -->
+        <div class="flex flex-col">
+          <!-- Main Toggle + Language Selector -->
+          <div class="flex items-center justify-between px-5 py-2 bg-gray-100/40 dark:bg-white/[0.02] border-b border-gray-200 dark:border-white/[0.06]">
+            <!-- Left: Tabs (Request / Sample / Live) -->
+            <div class="flex items-center shrink-0 mr-4 md:mr-6 gap-4 md:gap-6">
+              <div class="flex items-center bg-gray-200/50 dark:bg-white/5 p-0.5 rounded-lg">
+                <button 
+                  @click="mainViewMode = 'request'"
+                  class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all"
+                  :class="mainViewMode === 'request' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-400'"
+                >
+                  Request
+                </button>
+                <button 
+                  @click="mainViewMode = 'sample'"
+                  class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all"
+                  :class="mainViewMode === 'sample' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-400'"
+                >
+                  Response
+                </button>
+                <button 
+                  v-if="response"
+                  @click="mainViewMode = 'live'"
+                  class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-2"
+                  :class="mainViewMode === 'live' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-400'"
+                >
+                  Live Response
+                  <span v-if="response" class="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                </button>
+              </div>
+              
+              <!-- Subtle Divider -->
+              <div class="w-px h-5 bg-gray-300 dark:bg-white/10 hidden sm:block" />
+            </div>
+
+            <!-- Middle: Language Select (Only visible in Request mode) -->
+            <div 
+              v-if="mainViewMode === 'request'"
+              class="flex gap-1 overflow-x-auto scrollbar-hide flex-1"
+            >
               <button
                 v-for="(lang, index) in languages"
                 :key="lang.label"
-                class="flex items-center gap-2 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all duration-300 whitespace-nowrap border"
+                class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all duration-200 whitespace-nowrap"
                 :class="activeLanguage === index
-                  ? [langColors[lang.color], 'shadow-lg shadow-' + lang.color + '-500/5']
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 border-transparent'"
+                  ? 'text-gray-900 dark:text-white bg-white dark:bg-white/10 shadow-sm'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
                 @click="activeLanguage = index"
               >
                 <UIcon :name="lang.icon" class="w-3.5 h-3.5" />
@@ -539,164 +598,216 @@ const formatBytes = (bytes: number) => {
               </button>
             </div>
 
-            <!-- Copy Snippet -->
-            <UButton
-              color="gray"
-              variant="ghost"
-              size="xs"
-              :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'"
-              @click="copyToClipboard"
-              class="shrink-0 ml-4 font-bold"
+            <!-- Middle: Response Info -->
+            <div 
+              v-else
+              class="flex items-center gap-3 flex-1"
             >
-              {{ copied ? t('api_playground.actions.copied') : t('api_playground.actions.copy') }}
-            </UButton>
-          </div>
+              <div v-if="mainViewMode === 'live' && response" class="flex items-center gap-2">
+                <UBadge :color="responseStatusColor" variant="subtle" size="xs" class="font-bold">
+                  {{ response.status }}
+                </UBadge>
+                <span class="text-[10px] font-mono text-gray-500">{{ response.duration }}ms</span>
+              </div>
+            </div>
 
-          <!-- Code Display -->
-          <div class="relative group/code flex-1 bg-gray-950 dark:bg-[#080b13] min-h-[240px] overflow-hidden">
-             <div class="absolute top-4 right-4 z-10">
-               <span 
-                 class="px-2 py-0.5 rounded font-mono text-[9px] font-black uppercase tracking-tighter border transition-all duration-500"
-                 :class="[langColors[languages[activeLanguage].color]]"
-               >
-                 {{ languages[activeLanguage].lang }}
-               </span>
-             </div>
-             
-             <div class="flex h-full overflow-auto text-[13px] font-mono leading-relaxed">
-                <!-- Line Numbers -->
-                <div class="hidden sm:flex flex-col py-6 px-4 text-right text-gray-600 bg-gray-950/50 border-r border-white/5 select-none shrink-0">
-                  <div v-for="(_, i) in snippetLines" :key="i">{{ i + 1 }}</div>
-                </div>
-                <!-- Snippet -->
-                <pre class="p-5 overflow-x-auto w-full"><code v-html="highlightedSnippet" class="text-gray-300"></code></pre>
-             </div>
+            <!-- Actions (Test + Copy) -->
+            <div class="flex items-center gap-2 ml-3">
+              <button
+                @click="isModalOpen = true"
+                class="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+              >
+                <UIcon name="i-lucide-play" class="w-4 h-4" />
+                Test API
+              </button>
+              
+              <div class="w-px h-3.5 bg-gray-200 dark:bg-white/10 mx-1" />
+
+              <button
+                @click="mainViewMode === 'request' ? copyToClipboard() : copyResponse()"
+                class="flex items-center gap-1.5 px-2 py-1 text-[12px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                :class="{'opacity-30 cursor-not-allowed': mainViewMode === 'live' && !response}"
+              >
+                <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-4 h-4" />
+                {{ copied ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
           </div>
+        </div>
+
+        <!-- Main Display (Request/Response) -->
+        <div class="relative bg-gray-950 dark:bg-[#080b13] overflow-hidden">
+          <Transition mode="out-in" :duration="200" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0" enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100">
+            <!-- Request Snippet -->
+            <div v-if="mainViewMode === 'request'" :key="'request'" class="flex overflow-auto text-[13px] font-mono leading-[1.7]">
+              <!-- Line Numbers -->
+              <div class="hidden sm:flex flex-col py-4 px-3.5 text-right text-gray-600 select-none shrink-0 border-r border-white/[0.04]">
+                <div v-for="(_, i) in snippetLines" :key="i" class="leading-[1.7]">{{ i + 1 }}</div>
+              </div>
+              <!-- Snippet -->
+              <pre class="py-4 px-5 overflow-x-auto w-full"><code v-html="highlightedSnippet" class="text-gray-300"></code></pre>
+            </div>
+
+            <!-- Response Preview/Live Data -->
+            <div v-else :key="mainViewMode" class="min-h-[120px]">
+              <div v-if="mainViewMode === 'sample'" class="flex flex-col h-full bg-gray-950">
+                <div v-if="!responseSample" class="flex flex-col items-center justify-center py-10 opacity-30">
+                  <UIcon name="i-lucide-database" class="w-8 h-8 mb-2" />
+                  <p class="text-[11px] font-semibold uppercase tracking-wider">No sample response available</p>
+                </div>
+                <pre v-else class="p-6 text-[12px] font-mono whitespace-pre-wrap leading-[1.7] text-gray-400 select-all overflow-auto max-h-[500px]" v-html="highlightedResponseSample"></pre>
+              </div>
+
+              <div v-else-if="mainViewMode === 'live'" class="flex flex-col h-full bg-gray-950">
+                <div v-if="!response" class="flex flex-col items-center justify-center py-10 opacity-30">
+                  <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mb-2" />
+                  <p class="text-[11px] font-semibold uppercase tracking-wider">No live response available</p>
+                  <p class="text-[10px]">Send a request to see results</p>
+                </div>
+                <pre v-else class="p-6 text-[12px] font-mono whitespace-pre-wrap leading-[1.7] text-gray-400 select-all overflow-auto max-h-[500px]" v-html="formattedResponseBody"></pre>
+              </div>
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
 
+    <!-- Fullscreen Modal -->
     <UModal v-model:open="isModalOpen" fullscreen>
       <template #content>
         <div class="flex flex-col h-full bg-slate-50 dark:bg-[#0b0f19] overflow-hidden">
           <!-- Modal Header -->
-          <div class="flex justify-between items-center px-8 py-4 border-b border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl">
-            <div class="flex gap-4 items-center">
-              <span class="inline-flex items-center px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 font-mono text-[10px] font-black uppercase">{{ method }}</span>
-              <span class="text-sm font-mono text-gray-500 max-w-md truncate">{{ processedUrl }}</span>
+          <div class="flex justify-between items-center px-6 py-3 border-b border-gray-200 dark:border-white/10 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl">
+            <div class="flex gap-3 items-center">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded font-mono text-[10px] font-black uppercase border"
+                :class="[methodColors[method]?.bg, methodColors[method]?.text, methodColors[method]?.border]"
+              >{{ method }}</span>
+              <span class="text-xs font-mono text-gray-500 max-w-lg truncate">{{ processedUrl }}</span>
             </div>
-            <UButton color="gray" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false" />
+            <div class="flex items-center gap-4">
+              <UButton
+                color="primary"
+                variant="solid"
+                :loading="loading"
+                :disabled="!isBodyValid && editableBody.trim() !== ''"
+                class="font-bold px-5 tracking-wide shadow-sm"
+                @click="executeRequest"
+              >
+                <UIcon name="i-lucide-send" class="w-4 h-4" />
+                Send
+              </UButton>
+              <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="sm" @click="isModalOpen = false" />
+            </div>
           </div>
 
           <!-- Modal Body: Split Pane -->
           <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 overflow-hidden">
             <!-- Left: Request Config -->
-            <div class="flex flex-col border-r border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-8 space-y-8 overflow-y-auto">
-              <!-- Tabs Explorer -->
-              <div class="flex gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl w-full">
+            <div class="flex flex-col border-r border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.03] overflow-y-auto">
+              <!-- Tab Bar -->
+              <div class="flex gap-0 border-b border-gray-200 dark:border-white/10 px-6">
                 <button
                   v-for="tab in ['params', 'headers', 'body', 'curl']"
                   :key="tab"
-                  class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-300"
+                  class="flex items-center gap-1.5 px-4 py-3 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 border-b-2 -mb-px"
                   :class="activeRequestTab === tab 
-                    ? 'bg-white dark:bg-white/10 text-indigo-600 dark:text-white shadow-sm' 
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'"
+                    ? 'text-indigo-600 dark:text-indigo-400 border-indigo-500' 
+                    : 'text-gray-400 border-transparent hover:text-gray-600 dark:hover:text-gray-300'"
                   @click="activeRequestTab = tab"
                 >
-                  <UIcon :name="tab === 'params' ? 'i-lucide-variable' : tab === 'headers' ? 'i-lucide-file-text' : tab === 'curl' ? 'i-lucide-terminal' : 'i-lucide-braces'" class="w-4 h-4" />
+                  <UIcon :name="tab === 'params' ? 'i-lucide-variable' : tab === 'headers' ? 'i-lucide-file-text' : tab === 'curl' ? 'i-lucide-terminal' : 'i-lucide-braces'" class="w-3.5 h-3.5" />
                   {{ tab }}
                 </button>
               </div>
 
-              <!-- Content for each tab -->
-              <div class="flex-1">
+              <!-- Tab Content -->
+              <div class="flex-1 p-6 space-y-6">
                 <!-- Params -->
-                <div v-if="activeRequestTab === 'params'" class="space-y-8">
-                  <div v-if="Object.keys(editableVariables).length > 0" class="space-y-6">
-                     <div v-for="(value, key) in editableVariables" :key="key" class="group/field relative">
-                        <label class="block text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2 ml-1 transition-colors group-focus-within/field:text-indigo-500">{{ key }}</label>
-                        <input v-model="editableVariables[key]" type="text" class="w-full text-xs font-mono bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-200 px-4 py-3 rounded-xl border border-gray-200 dark:border-white/5 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all" />
+                <div v-if="activeRequestTab === 'params'" class="space-y-5">
+                  <div v-if="Object.keys(editableVariables).length > 0" class="space-y-4">
+                     <div v-for="(value, key) in editableVariables" :key="key" class="group/field">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 transition-colors group-focus-within/field:text-indigo-500">{{ key }}</label>
+                        <input v-model="editableVariables[key]" type="text" class="w-full text-xs font-mono bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-200 px-3 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all" />
                      </div>
                   </div>
-                  <div v-else class="text-center py-20 opacity-30">
-                     <UIcon name="i-lucide-variable" class="w-12 h-12 mx-auto mb-4" />
-                     <p class="text-xs font-bold uppercase tracking-widest">No variables needed</p>
+                  <div v-else class="text-center py-16 opacity-30">
+                     <UIcon name="i-lucide-variable" class="w-10 h-10 mx-auto mb-3" />
+                     <p class="text-xs font-semibold text-gray-500">No variables needed</p>
                   </div>
                 </div>
 
                 <!-- Headers -->
-                <div v-if="activeRequestTab === 'headers'" class="space-y-6">
-                   <div v-for="(value, key) in editableHeaders" :key="key" class="grid grid-cols-[1fr_2fr_auto] gap-3 items-center">
-                      <span class="text-[11px] font-mono text-gray-400">{{ key }}</span>
+                <div v-if="activeRequestTab === 'headers'" class="space-y-4">
+                   <div v-for="(value, key) in editableHeaders" :key="key" class="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
+                      <span class="text-[11px] font-mono text-gray-400 truncate">{{ key }}</span>
                       <div class="relative">
-                         <input v-model="editableHeaders[key]" :type="isSensitiveHeader(String(key)) && !isSecretVisible(String(key)) ? 'password' : 'text'" class="w-full text-xs font-mono bg-gray-50 dark:bg-black/20 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/5" />
-                         <button v-if="isSensitiveHeader(String(key))" @click="toggleSecretVisibility(String(key))" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><UIcon :name="isSecretVisible(String(key)) ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-3.5 h-3.5" /></button>
+                         <input v-model="editableHeaders[key]" :type="isSensitiveHeader(String(key)) && !isSecretVisible(String(key)) ? 'password' : 'text'" class="w-full text-xs font-mono bg-gray-50 dark:bg-black/20 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+                         <button v-if="isSensitiveHeader(String(key))" @click="toggleSecretVisibility(String(key))" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><UIcon :name="isSecretVisible(String(key)) ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-3.5 h-3.5" /></button>
                       </div>
-                      <UButton color="gray" variant="ghost" size="xs" icon="i-lucide-trash" @click="removeHeader(String(key))" />
+                      <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-trash-2" @click="removeHeader(String(key))" />
                    </div>
-                   <div class="flex gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 mt-8">
-                      <input v-model="newHeaderKey" placeholder="Header Name" class="flex-1 bg-transparent text-xs font-mono px-2 py-1 focus:outline-none" />
-                      <input v-model="newHeaderValue" placeholder="Value" class="flex-1 bg-transparent text-xs font-mono px-2 py-1 focus:outline-none" @keyup.enter="addHeader" />
-                      <UButton size="xs" icon="i-lucide-plus" @click="addHeader" />
+                   <div class="flex gap-2 p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-lg border border-dashed border-gray-300 dark:border-white/10 mt-6">
+                      <input v-model="newHeaderKey" placeholder="Header Name" class="flex-1 bg-transparent text-xs font-mono px-2 py-1 focus:outline-none text-gray-700 dark:text-gray-300 placeholder:text-gray-400" />
+                      <input v-model="newHeaderValue" placeholder="Value" class="flex-1 bg-transparent text-xs font-mono px-2 py-1 focus:outline-none text-gray-700 dark:text-gray-300 placeholder:text-gray-400" @keyup.enter="addHeader" />
+                      <UButton size="xs" icon="i-lucide-plus" color="primary" variant="soft" @click="addHeader" />
                    </div>
                 </div>
 
                 <!-- Body -->
-                <div v-if="activeRequestTab === 'body'" class="space-y-4">
-                   <div class="flex justify-between items-center mb-2">
-                      <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-500">JSON Body</h4>
-                      <button @click="formatBody" :disabled="!isBodyValid" class="text-[10px] font-black text-indigo-500 hover:text-indigo-400 disabled:opacity-30 uppercase">Format JSON</button>
+                <div v-if="activeRequestTab === 'body'" class="space-y-3">
+                   <div class="flex justify-between items-center">
+                      <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-500">JSON Body</h4>
+                      <button @click="formatBody" :disabled="!isBodyValid" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-400 disabled:opacity-30 uppercase tracking-wider">Format</button>
                    </div>
-                   <textarea v-model="editableBody" rows="15" class="w-full p-4 bg-gray-50 dark:bg-black/40 rounded-2xl text-xs font-mono text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/5 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 resize-none" :class="{ 'border-red-500 bg-red-500/5': !isBodyValid }" />
-                   <p v-if="!isBodyValid" class="text-[10px] text-red-500 font-bold uppercase tracking-tighter">{{ bodyError }}</p>
+                   <textarea v-model="editableBody" rows="15" class="w-full p-4 bg-gray-50 dark:bg-black/30 rounded-lg text-xs font-mono text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none" :class="{ 'border-red-500/50 bg-red-50 dark:bg-red-500/5': !isBodyValid }" />
+                   <p v-if="!isBodyValid" class="text-[10px] text-red-500 font-semibold">{{ bodyError }}</p>
                 </div>
 
                 <!-- cURL Snippet -->
-                <div v-if="activeRequestTab === 'curl'" class="h-full">
-                   <div class="flex items-center justify-between mb-4">
-                      <h4 class="text-[10px] font-black uppercase tracking-widest text-gray-500">cURL Command</h4>
-                      <UButton color="gray" variant="ghost" size="xs" icon="i-lucide-copy" @click="copyToClipboard" />
+                <div v-if="activeRequestTab === 'curl'" class="space-y-3">
+                   <div class="flex items-center justify-between">
+                      <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-500">cURL Command</h4>
+                      <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-copy" @click="copyToClipboard" />
                    </div>
-                   <div class="p-6 bg-gray-950 rounded-3xl border border-white/5 overflow-hidden">
-                      <pre class="text-[11px] font-mono whitespace-pre-wrap leading-relaxed select-all"><code v-html="curlSnippet" class="text-indigo-400/80"></code></pre>
+                   <div class="p-5 bg-gray-950 rounded-xl border border-white/[0.06] overflow-auto">
+                      <pre class="text-[11px] font-mono whitespace-pre-wrap leading-relaxed select-all"><code v-html="curlSnippet" class="text-gray-300"></code></pre>
                    </div>
-                   <p class="mt-4 text-[10px] text-gray-500 italic">This command includes your current parameters and headers.</p>
+                   <div class="flex items-center justify-between">
+                       <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Headers</h4>
+                       <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-copy" @click="copyToClipboard" />
+                    </div>
+                    <div class="p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.04] rounded-xl flex items-center justify-between">
+                       <span class="text-[11px] font-mono text-gray-400">Authorization</span>
+                       <UBadge color="primary" variant="subtle" size="xs">Included automatically</UBadge>
+                    </div>
+                   <p class="text-[10px] text-gray-400 italic">Includes your current parameters and headers.</p>
                 </div>
-              </div>
-
-              <!-- Execute Button in Modal Footer (Sticky-ish) -->
-              <div class="pt-8 border-t border-gray-100 dark:border-white/5">
-                 <UButton
-                   block
-                   size="xl"
-                   :loading="loading"
-                   :disabled="!isBodyValid && editableBody.trim() !== ''"
-                   class="h-14 bg-indigo-600 hover:bg-indigo-500 text-white border-0 shadow-lg shadow-indigo-500/10 rounded-2xl font-black uppercase tracking-[0.2em] text-[12px]"
-                   @click="executeRequest"
-                 >
-                   Send Request
-                   <div class="ml-auto flex items-center gap-2 opacity-50">
-                      <div class="w-px h-4 bg-current" />
-                      <span class="font-mono text-[10px]">⌘↵</span>
-                   </div>
-                 </UButton>
               </div>
             </div>
 
             <!-- Right: Response Explorer -->
             <div class="flex flex-col bg-gray-50 dark:bg-black/20 overflow-hidden">
-               <!-- Response Header Info -->
-               <div class="flex justify-between items-center px-8 py-5 border-b border-gray-200 dark:border-white/10 bg-white/5 text-gray-400">
-                  <div class="flex gap-4 items-center">
-                     <span class="text-[10px] font-black tracking-widest uppercase">Response</span>
+               <!-- Response Header -->
+               <div class="flex justify-between items-center px-6 py-3 border-b border-gray-200 dark:border-white/10 text-gray-400">
+                  <div class="flex gap-3 items-center">
+                     <span class="text-[10px] font-bold tracking-widest uppercase">Response</span>
                      <div v-if="response" class="flex gap-3 items-center">
-                        <UBadge :color="responseStatusColor" variant="subtle" size="xs" class="font-black uppercase">{{ response.status }} {{ response.statusText }}</UBadge>
-                        <span class="text-[10px] font-mono capitalize">{{ response.duration }}ms</span>
+                        <UBadge :color="responseStatusColor" variant="subtle" size="xs" class="font-bold">{{ response.status }} {{ response.statusText }}</UBadge>
+                        <span class="text-[10px] font-mono">{{ response.duration }}ms</span>
                      </div>
                   </div>
-                  <div v-if="response" class="flex gap-4">
-                     <button v-for="t in ['body', 'headers']" :key="t" @click="activeResponseTab = t" :class="activeResponseTab === t ? 'text-indigo-500' : 'text-gray-400'" class="text-[10px] font-black tracking-widest uppercase">{{ t }}</button>
-                     <UButton color="gray" variant="ghost" size="xs" icon="i-lucide-copy" @click="copyResponse" />
+                  <div v-if="response" class="flex gap-3 items-center">
+                     <button v-for="t in ['body', 'headers']" :key="t" @click="activeResponseTab = t" :class="activeResponseTab === t ? 'text-indigo-500' : 'text-gray-400 hover:text-gray-300'" class="text-[10px] font-bold tracking-wider uppercase transition-colors">{{ t }}</button>
+                      <UButton 
+                        color="neutral" 
+                        variant="ghost" 
+                        size="xs" 
+                        :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'" 
+                        :label="copied ? 'Copied' : ''"
+                        @click="copyResponse" 
+                        class="min-w-[60px]"
+                     />
                   </div>
                </div>
 
@@ -705,22 +816,22 @@ const formatBytes = (bytes: number) => {
                   <Transition mode="out-in">
                      <!-- Empty -->
                      <div v-if="!response && !loading && !error" class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-                        <UIcon name="i-lucide-zap" class="w-12 h-12 text-gray-800 mb-6 animate-pulse" />
-                        <h4 class="text-xs font-black uppercase tracking-[0.3em] text-gray-600 mb-3 ml-[0.3em]">Waiting for Request</h4>
-                        <p class="text-[11px] text-gray-500 max-w-[240px] leading-relaxed">Configure your request on the left and hit the magic button to see the server's response.</p>
+                        <UIcon name="i-lucide-arrow-left" class="w-8 h-8 text-gray-700 mb-4" />
+                        <h4 class="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-2">No response yet</h4>
+                        <p class="text-[11px] text-gray-500 max-w-[220px] leading-relaxed">Configure your request and click Send to see the response here.</p>
                      </div>
 
                      <!-- Loading -->
-                     <div v-else-if="loading" class="p-12 space-y-4">
+                     <div v-else-if="loading" class="p-12 space-y-3">
                         <div v-for="i in 5" :key="i" class="h-2 bg-white/5 rounded-full animate-pulse" :style="{ width: `${100 - (i*15)}%` }" />
                      </div>
 
                      <!-- Error -->
-                     <div v-else-if="error" class="p-12">
-                        <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-3xl">
-                           <div class="flex items-center gap-3 mb-4">
-                              <UIcon name="i-lucide-alert-octagon" class="w-5 h-5 text-red-500" />
-                              <span class="text-[10px] font-black uppercase tracking-widest text-red-500">Execution Error</span>
+                     <div v-else-if="error" class="p-8">
+                        <div class="p-5 bg-red-500/10 border border-red-500/20 rounded-xl">
+                           <div class="flex items-center gap-2 mb-3">
+                              <UIcon name="i-lucide-alert-circle" class="w-4 h-4 text-red-500" />
+                              <span class="text-[10px] font-bold uppercase tracking-wider text-red-500">Request Failed</span>
                            </div>
                            <p class="text-xs text-red-400/80 leading-relaxed font-mono">{{ error }}</p>
                         </div>
@@ -728,10 +839,10 @@ const formatBytes = (bytes: number) => {
 
                      <!-- Data -->
                      <div v-else-if="response" class="h-full">
-                        <pre v-if="activeResponseTab === 'body'" class="p-8 text-[12px] font-mono text-gray-400 whitespace-pre-wrap selection:bg-indigo-500/30" v-html="formattedResponseBody" />
-                        <div v-else class="p-8 space-y-3">
-                           <div v-for="(v, k) in response.headers" :key="k" class="grid grid-cols-[160px_1fr] gap-4 text-[10px] font-mono text-gray-400">
-                              <span class="text-gray-500 font-bold uppercase tracking-tighter">{{ k }}</span>
+                        <pre v-if="activeResponseTab === 'body'" class="p-6 text-[12px] font-mono text-gray-400 whitespace-pre-wrap selection:bg-indigo-500/30 leading-[1.7]" v-html="formattedResponseBody" />
+                        <div v-else class="p-6 space-y-2">
+                           <div v-for="(v, k) in response.headers" :key="k" class="grid grid-cols-[140px_1fr] gap-3 text-[10px] font-mono text-gray-400 py-1 border-b border-white/[0.03]">
+                              <span class="text-gray-500 font-semibold">{{ k }}</span>
                               <span class="break-all select-all">{{ v }}</span>
                            </div>
                         </div>
