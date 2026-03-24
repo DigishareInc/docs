@@ -1,7 +1,7 @@
 ---
 title: Tickets
 description: Gérer le cycle de vie des demandes clients via le système de tickets intégré.
-icon: i-ph-ticket-duotone
+icon: i-lucide-ticket
 ---
 
 Le système de tickets de Digishare vous permet de centraliser et de suivre les demandes d'assistance provenant de divers canaux (Web, WhatsApp, Mail).
