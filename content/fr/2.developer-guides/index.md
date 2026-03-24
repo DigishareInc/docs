@@ -18,4 +18,7 @@ Orchestrez des diffusions à grand volume et des flux marketing WhatsApp.
 ::card{title="Thirds" icon="i-lucide-users" to="/fr/developer-guides/thirds"}
 Gérez vos entités Third (contacts, clients) et leurs métadonnées personnalisées.
 ::
+::card{title="Tickets" icon="i-ph-ticket-duotone" to="/fr/developer-guides/tickets"}
+Gérez le cycle de vie des demandes clients via le système de tickets intégré.
+::
 ::

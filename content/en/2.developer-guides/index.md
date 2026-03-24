@@ -18,4 +18,7 @@ Orchestrate high-volume broadcasts and WhatsApp marketing flows.
 ::card{title="Thirds" icon="i-lucide-users" to="/developer-guides/thirds"}
 Manage your Third entities (contacts, customers) and their custom metadata.
 ::
+::card{title="Tickets" icon="i-ph-ticket-duotone" to="/developer-guides/tickets"}
+Manage customer request lifecycles via the integrated ticket system.
+::
 ::

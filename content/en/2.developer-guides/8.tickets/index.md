@@ -1,7 +1,7 @@
 ---
 title: Tickets
 description: Manage customer request lifecycles via the integrated ticket system.
-icon: i-lucide-ticket
+icon: i-ph-ticket-duotone
 ---
 
 The Digishare ticket system allows you to centralize and track support requests from various channels (Web, WhatsApp, Email).
