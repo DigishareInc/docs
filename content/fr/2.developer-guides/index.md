@@ -15,9 +15,14 @@ Intégrez le support en temps réel et les fonctionnalités de chat dans votre a
 ::card{title="Campagnes" icon="i-lucide-megaphone" to="/fr/developer-guides/campaigns"}
 Orchestrez des diffusions à grand volume et des flux marketing WhatsApp.
 ::
+::card{title="Leads" icon="i-lucide-users-round" to="/fr/developer-guides/leads"}
+Capturez et gérez les leads de Facebook et TikTok Ads avec un mappage de champs automatique.
+::
+
 ::card{title="Thirds" icon="i-lucide-users" to="/fr/developer-guides/thirds"}
 Gérez vos entités Third (contacts, clients) et leurs métadonnées personnalisées.
 ::
+
 ::card{title="Tickets" icon="i-lucide-ticket" to="/fr/developer-guides/tickets"}
 Gérez le cycle de vie des demandes clients via le système de tickets intégré.
 ::
