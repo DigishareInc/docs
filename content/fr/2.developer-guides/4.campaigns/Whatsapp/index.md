@@ -50,7 +50,7 @@ Contrôlez précisément quand et comment votre campagne est envoyée en utilisa
 
 Si votre modèle local utilise des variables comme `Bonjour {{name}}, votre commande {{order_id}} est prête.`, la charge utile optimale est :
 
-::api-playground{method="POST" url="https://api.digishare.ma/v1/campaigns" description="Envoyez une campagne WhatsApp personnalisée." :variables='{"token": "VOTRE_TOKEN", "senderId": "VOTRE_SENDER_ID", "templateId": "VOTRE_TEMPLATE_ID"}' :headers='{"Authorization": "Bearer {token}", "Content-Type": "application/json"}' :body='{"title": "Notification de Commande", "channel": "whatsapp", "sender_label_id": "{senderId}", "message_template_id": "{templateId}", "recipients": [{"wa_id": "212600000000", "name": "John", "order_id": "ORD-123"}, {"wa_id": "212600000001", "name": "Jane", "order_id": "ORD-456"}] }'}
+::api-playground{method="POST" url="https://api.digishare.ma/v1/campaigns" description="Envoyez une campagne WhatsApp personnalisée avec planification." :variables='{"token": "VOTRE_TOKEN", "senderId": "VOTRE_SENDER_ID", "templateId": "VOTRE_ID_MODELE"}' :headers='{"Authorization": "Bearer {token}", "Content-Type": "application/json"}' :body='{"title": "Notification de Commande", "channel": "whatsapp", "sender_label_id": "{senderId}", "message_template_id": "{templateId}", "start_datetime": "2024-12-01 10:00:00", "end_datetime": "2024-12-05 23:59:59", "terminate_datetime": "2024-12-10 00:00:00", "recipients": [{"wa_id": "212600000000", "name": "John", "order_id": "ORD-123"}, {"wa_id": "212600000001", "name": "Jane", "order_id": "ORD-456"}] }'}
 ::
 
 ## 4. Mapping Dynamique avec `global_data`

@@ -50,7 +50,8 @@ Control exactly when and how your campaign is sent using specialized date fields
 
 If your template uses variables like `Hello {{name}}, your order {{order_id}} is ready.`, the optimal payload is:
 
-::api-playground{method="POST" url="https://api.digishare.ma/v1/campaigns" description="Send a personalized WhatsApp campaign." :variables='{"token": "YOUR_TOKEN", "senderId": "YOUR_SENDER_ID", "templateId": "YOUR_TEMPLATE_ID"}' :headers='{"Authorization": "Bearer {token}", "Content-Type": "application/json"}' :body='{"title": "Order Notification", "channel": "whatsapp", "sender_label_id": "{senderId}", "message_template_id": "{templateId}", "recipients": [{"wa_id": "212600000000", "name": "John", "order_id": "ORD-123"}, {"wa_id": "212600000001", "name": "Jane", "order_id": "ORD-456"}] }'}
+::api-playground{method="POST" url="https://api.digishare.ma/v1/campaigns" description="Send a personalized WhatsApp campaign with scheduling." :variables='{"token": "YOUR_TOKEN", "senderId": "YOUR_SENDER_ID", "templateId": "YOUR_TEMPLATE_ID"}' :headers='{"Authorization": "Bearer {token}", "Content-Type": "application/json"}' :body='{"title": "Order Notification", "channel": "whatsapp", "sender_label_id": "{senderId}", "message_template_id": "{templateId}", "start_datetime": "2026-04-01 10:00:00", "end_datetime": "2026-04-05 23:59:59", "terminate_datetime": "2026-04-10 00:00:00", "recipients": [{"wa_id": "212600000000", "name": "John", "order_id": "ORD-123"}, {"wa_id": "212600000001", "name": "Jane", "order_id": "ORD-456"}] }'}
+::
 ::
 
 ## 4. Dynamic Mapping with `global_data`
