@@ -24,10 +24,13 @@ We recommend using the **flattened** structure for better readability and simpli
 - `sender_label_id`: ID of the sender channel.
 - `message_template_id`: ID of your **Digishare Message Template** (Text, ITM, or WABA).
 - `conversation_id`: (Optional) ID of an existing conversation or an integration trigger:
-  - `message-out`: Integrate immediately upon delivery.
-  - `replay-button`: Integrate only after a button click.
-  - `any-reply`: Integrate upon any user response.
-  - `conversed`: Integrate upon engagement.
+  - `message-out`: Create thread immediately upon delivery.
+  - `replay-button`: Create thread only after a button click.
+  - `any-reply`: Create thread upon any user text response.
+  - `conversed`: Create thread upon user engagement.
+- `start_datetime`: (Optional) Specific ISO-8601 date/time to begin sending the campaign.
+- `notify_webhooks`: (Optional) Boolean flag to trigger configured external webhooks.
+- `meta`: (Optional) Custom JSON object to store your internal IDs, analytic tags, or metadata.
 - `conversation_tags`: (Optional) Array of tags to apply to the generated conversation.
 - `recipients`: Recipient list with their specific data.
 - `global_data`: (Optional) Shared data or dynamic mapping.

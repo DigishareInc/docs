@@ -24,10 +24,13 @@ Nous recommandons d'utiliser la structure **aplatie** pour une meilleure lisibil
 - `sender_label_id`: ID du canal d'expédition.
 - `message_template_id`: ID de votre **Modèle de Message Digishare** (Texte, ITM ou WABA).
 - `conversation_id`: (Optionnel) ID d'une conversation existante ou un déclencheur d'intégration :
-  - `message-out` : Intégration immédiate dès l'envoi.
-  - `replay-button` : Intégration après un clic sur un bouton.
-  - `any-reply` : Intégration à la première réponse de l'utilisateur.
-  - `conversed` : Intégration après engagement multi-messages.
+  - `message-out` : Créer le fil dès l'envoi du message.
+  - `replay-button` : Créer le fil uniquement après un clic sur un bouton interactif.
+  - `any-reply` : Créer le fil à la première réponse textuelle de l'utilisateur.
+  - `conversed` : Créer le fil après un engagement de la part de l'utilisateur.
+- `start_datetime`: (Optionnel) Date/heure spécifique (format ISO-8601) pour commencer le traitement de la campagne.
+- `notify_webhooks`: (Optionnel) Flag booléen pour déclencher les webhooks externes configurés.
+- `meta`: (Optionnel) Objet JSON personnalisé pour stocker vos métadonnées, IDs internes ou tags analytiques.
 - `conversation_tags`: (Optionnel) Tableau de tags à appliquer à la conversation générée.
 - `recipients`: Liste des destinataires avec leurs données spécifiques.
 - `global_data`: (Optionnel) Données partagées ou mapping dynamique.
@@ -50,7 +53,7 @@ Contrôlez précisément quand et comment votre campagne est envoyée en utilisa
 
 Si votre modèle local utilise des variables comme `Bonjour {{name}}, votre commande {{order_id}} est prête.`, la charge utile optimale est :
 
-::api-playground{method="POST" url="https://api.digishare.ma/v1/campaigns" description="Envoyez une campagne WhatsApp personnalisée avec planification." :variables='{"token": "VOTRE_TOKEN", "senderId": "VOTRE_SENDER_ID", "templateId": "VOTRE_ID_MODELE"}' :headers='{"Authorization": "Bearer {token}", "Content-Type": "application/json"}' :body='{"title": "Notification de Commande", "channel": "whatsapp", "sender_label_id": "{senderId}", "message_template_id": "{templateId}", "start_datetime": "2024-12-01 10:00:00", "end_datetime": "2024-12-05 23:59:59", "terminate_datetime": "2024-12-10 00:00:00", "recipients": [{"wa_id": "212600000000", "name": "John", "order_id": "ORD-123"}, {"wa_id": "212600000001", "name": "Jane", "order_id": "ORD-456"}] }'}
+::api-playground{method="POST" url="https://api.digishare.ma/v1/campaigns" description="Envoyez une campagne WhatsApp personnalisée avec planification." :variables='{"token": "VOTRE_TOKEN", "senderId": "VOTRE_SENDER_ID", "templateId": "VOTRE_ID_MODELE"}' :headers='{"Authorization": "Bearer {token}", "Content-Type": "application/json"}' :body='{"title": "Notification de Commande", "channel": "whatsapp", "sender_label_id": "{senderId}", "message_template_id": "{templateId}", "start_datetime": "2026-04-01 10:00:00", "end_datetime": "2026-04-05 23:59:59", "terminate_datetime": "2026-04-10 00:00:00", "recipients": [{"wa_id": "212600000000", "name": "John", "order_id": "ORD-123"}, {"wa_id": "212600000001", "name": "Jane", "order_id": "ORD-456"}] }'}
 ::
 
 ## 4. Mapping Dynamique avec `global_data`
