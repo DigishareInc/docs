@@ -1,7 +1,7 @@
 ---
 title: Configuration des Webhooks
 description: Apprenez à configurer les webhooks pour recevoir des notifications d'événements en temps réel de Digishare.
-icon: i-ph-webhook-duotone
+icon: i-mdi-webhook
 ---
 
 Les webhooks vous permettent de recevoir des notifications HTTP en temps réel lorsque certains événements se produisent dans Digishare. Au lieu d'interroger notre API pour des mises à jour, Digishare peut envoyer les données d'événement directement à votre serveur dès qu'elles se produisent.
@@ -133,3 +133,4 @@ Si votre serveur se trouve derrière un pare-feu d'entreprise et n'est pas expos
 ::warning
 **Meilleure Pratique de Sécurité :** Nous vous recommandons vivement de valider les webhooks entrants à l'aide d'un jeton d'authentification ou en vérifiant que les requêtes proviennent des adresses IP connues de Digishare.
 ::
+

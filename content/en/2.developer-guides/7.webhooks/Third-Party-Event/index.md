@@ -1,7 +1,7 @@
 ---
 title: Overview
 description: Receive real-time updates about third party events.
-icon: i-lucide-webhook
+icon: i-mdi-webhook
 ---
 
 
@@ -20,3 +20,4 @@ icon: i-lucide-webhook
 ::tip
 For updates (`updated`), the payload includes a `changes` object showing only the modified fields and their new values.
 ::
+

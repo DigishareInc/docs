@@ -114,7 +114,7 @@ This is a warning block
 ::
 
 ::card-group
-::card{title="Title" icon="i-lucide-star" to="/path"}
+::card{title="Title" icon="i-mdi-star" to="/path"}
 Description text
 ::
 ::

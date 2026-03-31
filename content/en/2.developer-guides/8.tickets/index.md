@@ -1,7 +1,7 @@
 ---
 title: Tickets
 description: Manage customer request lifecycles via the integrated ticket system.
-icon: i-lucide-ticket
+icon: i-mdi-ticket
 ---
 
 The Digishare ticket system allows you to centralize and track support requests from various channels (Web, WhatsApp, Email).
@@ -39,3 +39,4 @@ Retrieve your tickets with filters by status or date.
 ::tip
 You can receive real-time notifications for every ticket modification by configuring a [Webhook for Tickets](/en/developer-guides/webhooks#4-third-party--ticket-events).
 ::
+

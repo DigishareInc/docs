@@ -1,7 +1,7 @@
 ---
 title: Campagnes WhatsApp
 description: Orchestrez des campagnes WhatsApp à grand volume avec une personnalisation dynamique.
-icon: i-lucide-smartphone
+icon: i-mdi-cellphone
 ---
 
 Ce guide explique comment envoyer des campagnes WhatsApp en utilisant les **Modèles de Message Digishare**. Ces modèles peuvent être de type **Texte**, **ITM** (Interactif Digishare) ou **WABA TM** (Modèle approuvé par Meta).
@@ -96,3 +96,4 @@ Organisez automatiquement vos fils de discussion métier en liant les campagnes 
 ::important
 Les tags sont appliqués à la conversation **dès que l'utilisateur répond** au message initial de la campagne ou dès que le message est distribué (selon vos paramètres de canal).
 ::
+

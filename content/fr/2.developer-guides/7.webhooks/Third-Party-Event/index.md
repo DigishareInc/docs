@@ -1,7 +1,7 @@
 ---
 title: Vue d'ensemble
 description: Recevez des mises à jour en temps réel sur les contacts tiers.
-icon: i-lucide-webhook
+icon: i-mdi-webhook
 ---
 
 
@@ -20,3 +20,4 @@ icon: i-lucide-webhook
 ::tip
 Pour les mises à jour (`updated`), le payload inclut un objet `changes` montrant uniquement les champs modifiés et leurs nouvelles valeurs.
 ::
+

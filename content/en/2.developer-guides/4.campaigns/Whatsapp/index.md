@@ -1,7 +1,7 @@
 ---
 title: WhatsApp Campaigns
 description: Orchestrate high-volume WhatsApp campaigns with dynamic personalization.
-icon: i-lucide-smartphone
+icon: i-mdi-cellphone
 ---
 
 This guide explains how to send WhatsApp campaigns using **Digishare Message Templates**. These templates can be **Text**, **ITM** (Interactive Digishare), or **WABA TM** (Meta-approved Template).
@@ -97,3 +97,4 @@ Automatically organize your business threads by linking campaigns to existing co
 ::important
 Tags are applied to the conversation **as soon as the user responds** to the initial campaign message or when the message is successfully delivered (depending on your channel settings).
 ::
+

@@ -7,7 +7,7 @@ export default defineAppConfig({
     socials: {
       website: {
         label: "Website",
-        icon: "i-lucide-globe",
+        icon: "i-mdi-web",
         href: "https://digishare.ma",
       },
     },
@@ -27,7 +27,7 @@ export default defineAppConfig({
     },
     footer: {
       credits: {
-        icon: "i-lucide-copyright",
+        icon: "i-mdi-copyright",
         text: "Digishare 2025",
         href: "https://digishare.ma",
       },

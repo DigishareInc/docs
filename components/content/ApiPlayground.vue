@@ -250,11 +250,11 @@ const resetToDefaults = () => {
 };
 
 const languages = [
-  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-lucide-terminal", color: "blue" },
-  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-lucide-braces", color: "yellow" },
-  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-lucide-code", color: "sky" },
-  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-lucide-file-code", color: "indigo" },
-  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-lucide-zap", color: "cyan" },
+  { label: "cURL", lang: "shell", client: "curl", hlLang: "bash", icon: "i-mdi-terminal", color: "blue" },
+  { label: "JavaScript", lang: "js", client: "fetch", hlLang: "javascript", icon: "i-mdi-code-braces", color: "yellow" },
+  { label: "Python", lang: "python", client: "requests", hlLang: "python", icon: "i-mdi-xml", color: "sky" },
+  { label: "PHP", lang: "php", client: "guzzle", hlLang: "php", icon: "i-mdi-file-code", color: "indigo" },
+  { label: "Go", lang: "go", client: "native", hlLang: "go", icon: "i-mdi-flash", color: "cyan" },
 ];
 
 const langColors: Record<string, string> = {
@@ -661,7 +661,7 @@ const formatBytes = (bytes: number) => {
                 @click="isModalOpen = true"
                 class="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
               >
-                <UIcon name="i-lucide-play" class="w-4 h-4" />
+                <UIcon name="i-mdi-play" class="w-4 h-4" />
                 Test API
               </button>
               
@@ -672,7 +672,7 @@ const formatBytes = (bytes: number) => {
                 class="flex items-center gap-1.5 px-2 py-1 text-[12px] font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
                 :class="{'opacity-30 cursor-not-allowed': mainViewMode === 'live' && !response}"
               >
-                <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="w-4 h-4" />
+                <UIcon :name="copied ? 'i-mdi-check' : 'i-mdi-content-copy'" class="w-4 h-4" />
                 {{ copied ? 'Copied' : 'Copy' }}
               </button>
             </div>
@@ -696,7 +696,7 @@ const formatBytes = (bytes: number) => {
             <div v-else :key="mainViewMode" class="min-h-[120px]">
               <div v-if="mainViewMode === 'sample'" class="flex flex-col h-full bg-gray-950">
                 <div v-if="!responseSample" class="flex flex-col items-center justify-center py-10 opacity-30">
-                  <UIcon name="i-lucide-database" class="w-8 h-8 mb-2" />
+                  <UIcon name="i-mdi-database" class="w-8 h-8 mb-2" />
                   <p class="text-[11px] font-semibold uppercase tracking-wider">No sample response available</p>
                 </div>
                 <pre v-else class="p-6 text-[12px] font-mono whitespace-pre-wrap leading-[1.7] text-gray-400 select-all overflow-auto max-h-[500px]" v-html="highlightedResponseSample"></pre>
@@ -704,7 +704,7 @@ const formatBytes = (bytes: number) => {
 
               <div v-else-if="mainViewMode === 'live'" class="flex flex-col h-full bg-gray-950">
                 <div v-if="!response" class="flex flex-col items-center justify-center py-10 opacity-30">
-                  <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mb-2" />
+                  <UIcon name="i-mdi-alert-circle" class="w-8 h-8 mb-2" />
                   <p class="text-[11px] font-semibold uppercase tracking-wider">No live response available</p>
                   <p class="text-[10px]">Send a request to see results</p>
                 </div>
@@ -738,10 +738,10 @@ const formatBytes = (bytes: number) => {
                 class="font-bold px-5 tracking-wide shadow-sm"
                 @click="executeRequest"
               >
-                <UIcon name="i-lucide-send" class="w-4 h-4" />
+                <UIcon name="i-mdi-send" class="w-4 h-4" />
                 Send
               </UButton>
-              <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="sm" @click="isModalOpen = false" />
+              <UButton color="neutral" variant="ghost" icon="i-mdi-close" size="sm" @click="isModalOpen = false" />
             </div>
           </div>
 
@@ -760,7 +760,7 @@ const formatBytes = (bytes: number) => {
                     : 'text-gray-400 border-transparent hover:text-gray-600 dark:hover:text-gray-300'"
                   @click="activeRequestTab = tab"
                 >
-                  <UIcon :name="tab === 'params' ? 'i-lucide-variable' : tab === 'headers' ? 'i-lucide-file-text' : tab === 'curl' ? 'i-lucide-terminal' : 'i-lucide-braces'" class="w-3.5 h-3.5" />
+                  <UIcon :name="tab === 'params' ? 'i-mdi-variable' : tab === 'headers' ? 'i-mdi-file-document' : tab === 'curl' ? 'i-mdi-terminal' : 'i-mdi-code-braces'" class="w-3.5 h-3.5" />
                   {{ tab }}
                 </button>
               </div>
@@ -774,7 +774,7 @@ const formatBytes = (bytes: number) => {
                         <div class="flex items-center justify-between mb-1.5">
                            <div class="flex items-center gap-2">
                               <label class="block text-[10px] font-bold uppercase tracking-wider text-gray-500 transition-colors group-focus-within/field:text-indigo-500">{{ key }}</label>
-                              <UIcon v-if="isSensitiveHeader(String(key)) && isValueSynced(String(editableVariables[key]))" name="i-lucide-globe" class="w-2.5 h-2.5 text-indigo-400" title="Synced from global storage" />
+                              <UIcon v-if="isSensitiveHeader(String(key)) && isValueSynced(String(editableVariables[key]))" name="i-mdi-web" class="w-2.5 h-2.5 text-indigo-400" title="Synced from global storage" />
                            </div>
                            <!-- Persistent Token Action -->
                            <button 
@@ -783,20 +783,20 @@ const formatBytes = (bytes: number) => {
                              class="text-[9px] font-bold uppercase tracking-tighter text-indigo-500/60 hover:text-indigo-500 flex items-center gap-1 transition-all"
                              :class="{ 'text-indigo-500 opacity-100': isValueSynced(String(editableVariables[key])) }"
                            >
-                             <UIcon :name="isValueSynced(String(editableVariables[key])) ? 'i-lucide-check' : 'i-lucide-share-2'" class="w-2.5 h-2.5" />
+                             <UIcon :name="isValueSynced(String(editableVariables[key])) ? 'i-mdi-check' : 'i-mdi-share-variant'" class="w-2.5 h-2.5" />
                              {{ isValueSynced(String(editableVariables[key])) ? 'Synced' : 'Sync Globally' }}
                            </button>
                         </div>
                         <div class="relative">
                           <input v-model="editableVariables[key]" :type="isSensitiveHeader(String(key)) && !isSecretVisible(String(key)) ? 'password' : 'text'" class="w-full text-xs font-mono bg-gray-50 dark:bg-black/20 text-gray-900 dark:text-gray-200 pl-3 pr-10 py-2.5 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all" />
                           <button v-if="isSensitiveHeader(String(key))" @click="toggleSecretVisibility(String(key))" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                             <UIcon :name="isSecretVisible(String(key)) ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-3.5 h-3.5" />
+                             <UIcon :name="isSecretVisible(String(key)) ? 'i-mdi-eye-off' : 'i-mdi-eye'" class="w-3.5 h-3.5" />
                           </button>
                         </div>
                      </div>
                   </div>
                   <div v-else class="text-center py-16 opacity-30">
-                     <UIcon name="i-lucide-variable" class="w-10 h-10 mx-auto mb-3" />
+                     <UIcon name="i-mdi-variable" class="w-10 h-10 mx-auto mb-3" />
                      <p class="text-xs font-semibold text-gray-500">No variables needed</p>
                   </div>
                 </div>
@@ -812,20 +812,20 @@ const formatBytes = (bytes: number) => {
                             class="text-[9px] font-bold uppercase tracking-tighter text-indigo-500/0 group-hover/header:text-indigo-500/60 transition-all flex items-center gap-1"
                             :class="{ 'opacity-100 text-indigo-500/60': isValueSynced(String(editableHeaders[key])) }"
                           >
-                             <UIcon :name="isValueSynced(String(editableHeaders[key])) ? 'i-lucide-globe' : 'i-lucide-share-2'" class="w-2.5 h-2.5" />
+                             <UIcon :name="isValueSynced(String(editableHeaders[key])) ? 'i-mdi-web' : 'i-mdi-share-variant'" class="w-2.5 h-2.5" />
                              {{ isValueSynced(String(editableHeaders[key])) ? 'Global' : 'Sync' }}
                           </button>
                        </div>
                        <div class="relative">
                           <input v-model="editableHeaders[key]" :type="isSensitiveHeader(String(key)) && !isSecretVisible(String(key)) ? 'password' : 'text'" class="w-full text-xs font-mono bg-gray-50 dark:bg-black/20 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all" />
-                          <button v-if="isSensitiveHeader(String(key))" @click="toggleSecretVisibility(String(key))" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><UIcon :name="isSecretVisible(String(key)) ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-3.5 h-3.5" /></button>
+                          <button v-if="isSensitiveHeader(String(key))" @click="toggleSecretVisibility(String(key))" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><UIcon :name="isSecretVisible(String(key)) ? 'i-mdi-eye-off' : 'i-mdi-eye'" class="w-3.5 h-3.5" /></button>
                        </div>
-                       <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-trash-2" @click="removeHeader(String(key))" />
+                       <UButton color="neutral" variant="ghost" size="xs" icon="i-mdi-delete-2" @click="removeHeader(String(key))" />
                     </div>
                    <div class="flex gap-2 p-2.5 bg-gray-50 dark:bg-white/[0.03] rounded-lg border border-dashed border-gray-300 dark:border-white/10 mt-6">
                       <input v-model="newHeaderKey" placeholder="Header Name" class="flex-1 bg-transparent text-xs font-mono px-2 py-1 focus:outline-none text-gray-700 dark:text-gray-300 placeholder:text-gray-400" />
                       <input v-model="newHeaderValue" placeholder="Value" class="flex-1 bg-transparent text-xs font-mono px-2 py-1 focus:outline-none text-gray-700 dark:text-gray-300 placeholder:text-gray-400" @keyup.enter="addHeader" />
-                      <UButton size="xs" icon="i-lucide-plus" color="primary" variant="soft" @click="addHeader" />
+                      <UButton size="xs" icon="i-mdi-plus" color="primary" variant="soft" @click="addHeader" />
                    </div>
                 </div>
 
@@ -838,7 +838,7 @@ const formatBytes = (bytes: number) => {
                        </div>
                        <div class="flex items-center gap-4">
                           <button @click="formatBody" :disabled="!isBodyValid" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-400 disabled:opacity-30 uppercase tracking-wider transition-colors flex items-center gap-1">
-                             <UIcon name="i-lucide-wand-2" class="w-3 h-3" />
+                             <UIcon name="i-mdi-auto-fix" class="w-3 h-3" />
                              Format
                           </button>
                        </div>
@@ -871,7 +871,7 @@ const formatBytes = (bytes: number) => {
                        </div>
                     </div>
                     <p v-if="!isBodyValid" class="text-[10px] text-red-500 font-bold flex items-center gap-1.5 px-1 uppercase tracking-tighter">
-                       <UIcon name="i-lucide-alert-circle" />
+                       <UIcon name="i-mdi-alert-circle" />
                        {{ bodyError }}
                     </p>
                  </div>
@@ -880,7 +880,7 @@ const formatBytes = (bytes: number) => {
                 <div v-if="activeRequestTab === 'curl'" class="space-y-3">
                    <div class="flex items-center justify-between">
                       <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-500">cURL Command</h4>
-                      <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-copy" @click="copyToClipboard" />
+                      <UButton color="neutral" variant="ghost" size="xs" icon="i-mdi-content-copy" @click="copyToClipboard" />
                    </div>
                    <div class="p-5 bg-gray-950 rounded-xl border border-white/[0.06] overflow-auto">
                       <pre class="text-[11px] font-mono whitespace-pre-wrap leading-relaxed select-all"><code v-html="curlSnippet" class="text-gray-300"></code></pre>
@@ -912,7 +912,7 @@ const formatBytes = (bytes: number) => {
                         color="neutral" 
                         variant="ghost" 
                         size="xs" 
-                        :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'" 
+                        :icon="copied ? 'i-mdi-check' : 'i-mdi-content-copy'" 
                         :label="copied ? 'Copied' : ''"
                         @click="copyResponse" 
                         class="min-w-[60px]"
@@ -925,7 +925,7 @@ const formatBytes = (bytes: number) => {
                   <Transition mode="out-in">
                      <!-- Empty -->
                      <div v-if="!response && !loading && !error" class="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
-                        <UIcon name="i-lucide-arrow-left" class="w-8 h-8 text-gray-700 mb-4" />
+                        <UIcon name="i-mdi-arrow-left" class="w-8 h-8 text-gray-700 mb-4" />
                         <h4 class="text-[11px] font-bold uppercase tracking-widest text-gray-600 mb-2">No response yet</h4>
                         <p class="text-[11px] text-gray-500 max-w-[220px] leading-relaxed">Configure your request and click Send to see the response here.</p>
                      </div>
@@ -939,7 +939,7 @@ const formatBytes = (bytes: number) => {
                      <div v-else-if="error" class="p-8">
                         <div class="p-5 bg-red-500/10 border border-red-500/20 rounded-xl">
                            <div class="flex items-center gap-2 mb-3">
-                              <UIcon name="i-lucide-alert-circle" class="w-4 h-4 text-red-500" />
+                              <UIcon name="i-mdi-alert-circle" class="w-4 h-4 text-red-500" />
                               <span class="text-[10px] font-bold uppercase tracking-wider text-red-500">Request Failed</span>
                            </div>
                            <p class="text-xs text-red-400/80 leading-relaxed font-mono">{{ error }}</p>
@@ -1081,3 +1081,5 @@ pre code {
   text-shadow: 0 0 10px rgba(129, 140, 248, 0.2);
 }
 </style>
+
+
