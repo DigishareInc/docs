@@ -1,6 +1,6 @@
 ---
-navigation: false
-title: Social networks leads retrieval
+navigation: true
+title: Overview
 description: Capture and manage your leads from Facebook and TikTok Ads with automatic field mapping.
 icon: i-lucide-users-round
 ---

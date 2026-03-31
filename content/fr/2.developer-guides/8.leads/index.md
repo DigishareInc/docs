@@ -1,6 +1,6 @@
 ---
-navigation: false
-title: Récupération de leads des réseaux sociaux
+navigation: true
+title: Aperçu
 description: Capturez et gérez vos leads de Facebook et TikTok Ads avec un mappage de champs automatique.
 icon: i-lucide-users-round
 ---
