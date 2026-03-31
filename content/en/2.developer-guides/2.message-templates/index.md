@@ -5,7 +5,7 @@ title: Message Templates
 description: Manage and send various types of message templates across different channels.
 ---
 
-Message templates are pre-approved by Meta and classified into three distinct categories based on their purpose. Each category has its own usage rules and pricing.
+**Digishare Message templates** support multiple formats: **Text**, **ITM** (Interactive Digishare), or **WABA** (Meta-approved Template). They are classified into categories based on their purpose and each type has its own usage rules and pricing.
 
 ## Template Categories
 
