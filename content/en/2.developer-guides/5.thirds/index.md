@@ -1,9 +1,6 @@
 ---
 navigation: false
-title: Overview
 icon: i-mdi-file-document-outline
-navigation: true
-icon: i-mdi-information-outline
 description: Manage your contacts, customers, and leads via the API.
 ---
 
