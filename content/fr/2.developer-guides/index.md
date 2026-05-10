@@ -26,5 +26,8 @@ Gérez vos entités Third (contacts, clients) et leurs métadonnées personnalis
 ::card{title="Tickets" icon="i-mdi-ticket" to="/fr/developer-guides/tickets"}
 Gérez le cycle de vie des demandes clients via le système de tickets intégré.
 ::
+::card{title="Chat Intégré" icon="i-mdi-dock-window" to="/fr/developer-guides/embeded/embedded_chat_docs"}
+Intégrez le widget chat Digishare dans votre propre site web en utilisant un pass à usage unique sécurisé.
+::
 ::
 

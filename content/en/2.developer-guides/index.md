@@ -26,5 +26,8 @@ Manage your Third entities (contacts, customers) and their custom metadata.
 ::card{title="Tickets" icon="i-mdi-ticket" to="/developer-guides/tickets"}
 Manage customer request lifecycles via the integrated ticket system.
 ::
+::card{title="Embedded Chat" icon="i-mdi-dock-window" to="/developer-guides/embeded/embedded_chat_docs"}
+Embed the Digishare Chat Widget into your own website using a secure one-time pass.
+::
 ::
 
