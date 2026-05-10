@@ -1,4 +1,7 @@
-<!-- # Widget Chat Intégré — Guide d'Intégration -->
+---
+title: Aperçu
+description: Apprenez à intégrer le Widget Chat Digishare dans votre site web en utilisant un pass à usage unique sécurisé.
+---
 
 Intégrez le Widget Chat Digishare dans votre site web afin que vos utilisateurs puissent discuter directement sans quitter votre application.
 

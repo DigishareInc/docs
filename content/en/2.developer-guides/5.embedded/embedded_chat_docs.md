@@ -1,4 +1,7 @@
-  <!-- # Embedded Chat Widget — Integration Guide -->
+---
+title: Overview
+description: Learn how to embed the Digishare Chat Widget into your website using a secure one-time pass.
+---
 
 Embed the Digishare Chat Widget into your website so your users can chat directly without leaving your app.
 
@@ -334,6 +337,6 @@ The chat widget session will expire after a certain period. When this happens:
 | Item                | Value / Format                                                   |
 |---------------------|------------------------------------------------------------------|
 | **Generate Code**   | `POST https://api.digishare.ma/v1/oauth/widget/generate-code`   |
-| **Widget URL**      | `https://app.digishare.ma/chat/embeded/{room_id}?code={code}`   |
+| **Widget URL**      | `https://app.digishare.ma/chat/embedded/{room_id}?code={code}`  |
 | **Auth Header**     | `Bearer YOUR_ACCESS_TOKEN`                                       |
 | **Code Lifetime**   | Single-use, expires in ~5 minutes                                |
