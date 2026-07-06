@@ -6,13 +6,13 @@
     "generate": "nuxt generate --extends docus"
   },
   "dependencies": {
-    "@nuxt/ui": "^4.7.1",
-    "@nuxtjs/i18n": "^10.3.0",
-    "@scalar/snippetz": "^0.7.8",
+    "@nuxt/ui": "^4.9.0",
+    "@nuxtjs/i18n": "^10.4.0",
+    "@scalar/snippetz": "^0.9.20",
     "@types/highlight.js": "^10.1.0",
-    "better-sqlite3": "^12.9.0",
-    "docus": "^5.10.1",
+    "better-sqlite3": "^12.11.1",
+    "docus": "^5.12.3",
     "highlight.js": "^11.11.1",
-    "nuxt": "^4.4.4"
+    "nuxt": "^4.4.8"
   }
 }
