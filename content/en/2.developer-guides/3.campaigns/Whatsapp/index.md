@@ -31,7 +31,8 @@ The campaign payload utilizes a structured JSON schema optimized for high-volume
 | `notify_webhooks` | `boolean` | Optional | If `true`, triggers external webhooks for delivery and interaction events. |
 | `meta` | `object` | Optional | A custom JSON object for internal analytics, IDs, or external references. |
 | `conversation_tags` | `array` | Optional | A list of labels to automatically apply to the generated conversations. |
-| `recipients` | `array` | **Required** | A list of recipient objects containing their unique IDs and variables. |
+| `assign_ticket_handler_as_participant` | `boolean` | Optional | If `true`, automatically attaches the specified agent (`handler_id`) as a LiveChat room participant. |
+| `recipients` | `array` | **Required** | A list of recipient objects containing their unique IDs (e.g. `wa_id`), variables, and optionally `handler_id`. |
 | `global_data` | `object` | Optional | The mapping bridge used to populate template variables with static values or dynamic recipient data. |
 
 ## 2. Example: Personalized Order Notification
@@ -130,3 +131,37 @@ Automatically organize your business threads by linking campaigns to existing co
 ::important
 Tags are applied to the conversation **as soon as the user responds** to the initial campaign message or when the message is successfully delivered (depending on your channel settings).
 ::
+
+### Direct Ticket Handler / Agent Assignment
+
+To assign an agent/ticket handler directly as a LiveChat room participant without passing through a ticket automation rule, set `"assign_ticket_handler_as_participant": true` in the campaign configuration and provide `handler_id` (the agent's user ID) for each recipient:
+
+```json
+{
+  "title": "Direct Support & Follow-up Campaign",
+  "channel": "whatsapp",
+  "sender_label_id": "SENDER_123",
+  "message_template_id": "TPL_456",
+  "assign_ticket_handler_as_participant": true,
+  "conversation_tags": ["priority_support"],
+  "global_data": {
+    "name": "%recipient.name%"
+  },
+  "recipients": [
+    {
+      "wa_id": "212600000000",
+      "name": "John Doe",
+      "handler_id": 42
+    },
+    {
+      "wa_id": "212600000001",
+      "name": "Jane Smith",
+      "handler_id": 105
+    }
+  ]
+}
+```
+
+> [!NOTE]
+> When `assign_ticket_handler_as_participant` is set to `true`, the agent specified by `handler_id` is automatically attached to the conversation's LiveChat room upon campaign message dispatch or customer response (`onReply` / `onConversed`).
+

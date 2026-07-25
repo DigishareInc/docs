@@ -31,7 +31,8 @@ La charge utile de la campagne utilise un schéma JSON structuré optimisé pour
 | `notify_webhooks` | `boolean` | Optionnel | Si `true`, déclenche les webhooks externes pour les événements de livraison et d'interaction. |
 | `meta` | `object` | Optionnel | Un objet JSON personnalisé pour l'analyse interne, les IDs ou les références externes. |
 | `conversation_tags` | `array` | Optionnel | Une liste de labels à appliquer automatiquement aux conversations générées. |
-| `recipients` | `array` | **Requis** | Une liste d'objets destinataires contenant leurs identifiants uniques et variables. |
+| `assign_ticket_handler_as_participant` | `boolean` | Optionnel | Si `true`, rattache automatiquement l'agent (`handler_id`) comme participant à la room de conversation LiveChat. |
+| `recipients` | `array` | **Requis** | Une liste d'objets destinataires contenant leurs identifiants uniques (ex: `wa_id`), variables et optionnellement `handler_id`. |
 | `global_data` | `object` | Optionnel | Le pont de mappage utilisé pour remplir les variables du modèle avec des valeurs statiques ou des données dynamiques des destinataires. |
 
 ## 2. Exemple : Notification de Commande Personnalisée
@@ -130,3 +131,37 @@ Organisez automatiquement vos fils de discussion professionnels en liant les cam
 ::important
 Les tags sont appliqués à la conversation **dès que l utilisateur répond** au message initial de la campagne ou lorsque le message est livré avec succès (selon vos paramètres de canal).
 ::
+
+### Assignation Directe de l'Agent / Gestionnaire (Ticket Handler)
+
+Pour assigner directement un agent/gestionnaire de ticket comme participant dans la room de conversation LiveChat sans passer par une règle d'automation de ticket, définissez `"assign_ticket_handler_as_participant": true` au niveau global de la campagne et spécifiez le `handler_id` (ID de l'utilisateur agent) pour chaque destinataire :
+
+```json
+{
+  "title": "Campagne Support & Suivi Direct",
+  "channel": "whatsapp",
+  "sender_label_id": "SENDER_123",
+  "message_template_id": "TPL_456",
+  "assign_ticket_handler_as_participant": true,
+  "conversation_tags": ["support_prioritaire"],
+  "global_data": {
+    "name": "%recipient.name%"
+  },
+  "recipients": [
+    {
+      "wa_id": "212600000000",
+      "name": "John Doe",
+      "handler_id": 42
+    },
+    {
+      "wa_id": "212600000001",
+      "name": "Jane Smith",
+      "handler_id": 105
+    }
+  ]
+}
+```
+
+> [!NOTE]
+> Lorsque `assign_ticket_handler_as_participant` est activé, l'agent spécifié par `handler_id` est immédiatement rattaché comme participant au salon LiveChat de la conversation lors de l'envoi du message ou lors de la réponse du client (`onReply` / `onConversed`).
+
