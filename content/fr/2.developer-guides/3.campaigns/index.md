@@ -9,6 +9,7 @@ description: Orchestrez des diffusions à haut volume et des flux marketing mult
 ::UPageGrid
 :UPageCard{icon="i-mdi-cellphone" title="Campagnes WhatsApp" description="Envoyez des messages WhatsApp personnalisés à l'aide de modèles, de boutons interactifs et de médias." to="/fr/developer-guides/campaigns/whatsapp"}
 :UPageCard{icon="i-mdi-comment-text-outline" title="Campagnes SMS" description="Notifications SMS à haut volume et marketing partout dans le monde." to="/fr/developer-guides/campaigns/sms"}
+:UPageCard{icon="i-mdi-clock-fast" title="API asynchrone" description="Mettez vos campagnes en file via la passerelle d'événements pour les intégrations à grand volume." to="/fr/developer-guides/campaigns/async-api"}
 ::
 
 
