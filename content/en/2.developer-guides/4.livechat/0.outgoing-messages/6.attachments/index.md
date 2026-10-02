@@ -107,10 +107,10 @@ Two limits apply to every attachment: Digishare's own, and the one of the provid
 
 ### Digishare limit
 
-**100 MB per file**, for every provider type and every file type. The API refuses a request body over 100 MB with HTTP `413`.
+**100 MB per file**, for every provider type and every file type. The API refuses a request body over 100 MB with HTTP `413` (an HTML error page from the gateway, not JSON).
 
-- With `url`, Digishare downloads the file while it handles your request, so host it on a fast, reliable server. A file over 100 MB is not stored: the message comes back as the `unsupported file type` placeholder described in [Things to know](#things-to-know).
-- With `base64`, the whole file is decoded in memory on the API server, and base64 adds about a third to the request. Large base64 requests can therefore fail well below 100 MB. Use `base64` for small files only (under 10 MB) and `url` for anything larger.
+- With `url`, Digishare downloads the file while it handles your request, so host it on a fast, reliable server. Files up to 104,857,600 bytes (100 MiB) are accepted. A file over 100 MB is not stored: the message comes back as the `unsupported file type` placeholder described in [Things to know](#things-to-know).
+- With `base64`, the whole file is decoded in memory on the API server, and base64 adds about a third to the request. In our tests a 25 MB file was accepted, while a 40 MB file failed with HTTP `500` and left an empty message in the conversation. Use `base64` for files up to 25 MB and `url` for anything larger.
 
 ::tip
 When in doubt, host the file and use `url`.

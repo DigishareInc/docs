@@ -107,10 +107,10 @@ Deux limites s'appliquent à chaque pièce jointe : celle de Digishare, et celle
 
 ### Limite Digishare
 
-**100 Mo par fichier**, pour tous les types de fournisseur et tous les types de fichier. L'API refuse un corps de requête de plus de 100 Mo avec un HTTP `413`.
+**100 Mo par fichier**, pour tous les types de fournisseur et tous les types de fichier. L'API refuse un corps de requête de plus de 100 Mo avec un HTTP `413` (une page d'erreur HTML de la passerelle, pas du JSON).
 
-- Avec `url`, Digishare télécharge le fichier pendant le traitement de votre requête : hébergez-le sur un serveur rapide et fiable. Un fichier de plus de 100 Mo n'est pas enregistré : le message revient sous la forme de l'espace réservé `unsupported file type` décrit dans [À savoir](#à-savoir).
-- Avec `base64`, le fichier entier est décodé en mémoire sur le serveur de l'API, et le base64 ajoute environ un tiers à la requête. Les grosses requêtes base64 peuvent donc échouer bien en dessous de 100 Mo. Réservez `base64` aux petits fichiers (moins de 10 Mo) et utilisez `url` au-delà.
+- Avec `url`, Digishare télécharge le fichier pendant le traitement de votre requête : hébergez-le sur un serveur rapide et fiable. Les fichiers jusqu'à 104 857 600 octets (100 Mio) sont acceptés. Un fichier de plus de 100 Mo n'est pas enregistré : le message revient sous la forme de l'espace réservé `unsupported file type` décrit dans [À savoir](#à-savoir).
+- Avec `base64`, le fichier entier est décodé en mémoire sur le serveur de l'API, et le base64 ajoute environ un tiers à la requête. Lors de nos tests, un fichier de 25 Mo a été accepté, tandis qu'un fichier de 40 Mo a échoué avec un HTTP `500` en laissant un message vide dans la conversation. Utilisez `base64` pour les fichiers jusqu'à 25 Mo et `url` au-delà.
 
 ::tip
 En cas de doute, hébergez le fichier et utilisez `url`.
