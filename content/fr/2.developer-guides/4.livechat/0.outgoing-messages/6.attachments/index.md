@@ -18,11 +18,15 @@ Les images, vidéos, fichiers audio et documents s'envoient tous de la même fa�
 
 | Paramètre         | Type    | Requis  | Description                                                                                              |
 | :---------------- | :------ | :------ | :------------------------------------------------------------------------------------------------------- |
-| `conversation_id` | String  | **Oui** | ID provenant de l'événement webhook.                                                                     |
+| `conversation_id` | String  | **Oui** | ID de la conversation : issu de l'événement webhook, ou de [Créer une conversation](/fr/developer-guides/livechat/conversation/create-conversation).             |
 | `send_to_third`   | Boolean | **Oui** | Mettre à `true` pour livrer le fichier à la plateforme de l'utilisateur (par ex. WhatsApp).              |
 | `file`            | Object  | **Oui** | La pièce jointe. Voir [L'objet file](#lobjet-file). Remplace `body`.                                     |
 | `reply_to`        | String  | Non     | ID d'un message de la même conversation à citer.                                                         |
 | `type`            | String  | Non     | Inutile. Le type du message est détecté à partir du fichier (voir [Détection du type](#détection-du-type)). |
+
+::tip
+**Pas encore d'ID de conversation ?** Appelez [Créer une conversation](/fr/developer-guides/livechat/conversation/create-conversation) avec votre instance de fournisseur et le numéro du destinataire, puis utilisez l'`id` renvoyé. Par défaut, cet appel archive d'abord la conversation active du client ; passez `archive_active_conversation: false` pour la réutiliser.
+::
 
 ## L'objet file
 

@@ -18,11 +18,15 @@ Images, videos, audio files and documents are all sent the same way: call `POST 
 
 | Parameter         | Type    | Required | Description                                                                                   |
 | :---------------- | :------ | :------- | :-------------------------------------------------------------------------------------------- |
-| `conversation_id` | String  | **Yes**  | ID from the webhook event.                                                                    |
+| `conversation_id` | String  | **Yes**  | ID of the conversation: from the webhook event, or from [Create Conversation](/developer-guides/livechat/conversation/create-conversation).      |
 | `send_to_third`   | Boolean | **Yes**  | Set `true` to deliver the file to the user's platform (e.g., WhatsApp).                       |
 | `file`            | Object  | **Yes**  | The attachment. See [The file object](#the-file-object). Replaces `body`.                     |
 | `reply_to`        | String  | No       | ID of a message in the same conversation to quote.                                            |
 | `type`            | String  | No       | Not needed. The message type is detected from the file (see [Type detection](#type-detection)). |
+
+::tip
+**No conversation ID yet?** Call [Create Conversation](/developer-guides/livechat/conversation/create-conversation) with your provider instance and the recipient's number, then use the `id` it returns. By default that call archives the customer's active conversation first; pass `archive_active_conversation: false` to reuse it instead.
+::
 
 ## The file object
 
