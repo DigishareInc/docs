@@ -17,11 +17,12 @@ Les images, vidéos, fichiers audio et documents peuvent être envoyés de deux 
 | **Visible dans l'inbox Digishare**    | Non : les agents voient une bulle vide                            | Oui                                                   |
 | **Types de fournisseur**              | WhatsApp uniquement (`whatsapp`, `centrelatio`, `whatsapp_web`)   | Tous                                                  |
 | **`type` du message**                 | Vous le définissez                                                | Détecté à partir du fichier                           |
-| **Messages vocaux et `reply_to`**     | Non                                                               | Oui                                                   |
+| **Légende (texte avec le fichier)**   | `body.caption`                                                    | `file.caption`                                        |
+| **Messages vocaux (API WhatsApp) et `reply_to`** | Non                                                    | Oui                                                   |
 | **Limite de taille Digishare**        | Aucune : WhatsApp récupère le fichier et applique ses propres limites | 100 Mo                                            |
 
 ::tip
-Utilisez un **lien** pour les envois à fort volume, ou quand vos fichiers sont déjà hébergés et que les agents n'ont pas besoin de les voir dans l'inbox. Utilisez un **upload** quand les agents doivent voir le fichier dans l'inbox, que vous n'avez que les octets du fichier, que vous avez besoin d'un message vocal, ou que le fournisseur est Telegram ou Messenger.
+Utilisez un **lien** pour les envois à fort volume, ou quand vos fichiers sont déjà hébergés et que les agents n'ont pas besoin de les voir dans l'inbox. Utilisez un **upload** quand les agents doivent voir le fichier dans l'inbox, que vous n'avez que les octets du fichier, que vous avez besoin d'un message vocal (API WhatsApp uniquement), ou que le fournisseur est Telegram ou Messenger.
 ::
 
 ## Envoi par lien
@@ -35,6 +36,7 @@ Placez un lien HTTPS public dans `body` et définissez le `type` de la pièce jo
 | `type`                   | String  | **Oui**   | `image`, `video`, `audio`, `document` ou `sticker`. Digishare n'inspecte pas le lien : il doit correspondre au fichier. |
 | `body.link`              | String  | **Oui**   | Lien HTTPS public vers le fichier. WhatsApp doit pouvoir y accéder sans connexion.                           |
 | `body.filename`          | String  | Non       | Documents uniquement. Le nom que voit le client, extension comprise (`facture.pdf`).                         |
+| `body.caption`           | String  | Non       | Texte affiché sous le fichier, dans le même message. Images, vidéos et documents uniquement. Voir [Texte avec une pièce jointe](#texte-avec-une-pièce-jointe). |
 | `conversation_id`        | String  | **Oui**\* | La conversation. Voir [Envoyer un Message](/fr/developer-guides/livechat/conversation/send-message-conversation) pour l'alternative avec `recipient_id`.                   |
 | `send_to_third`          | Boolean | Non       | `true` par défaut.                                                                                           |
 
@@ -104,7 +106,8 @@ Fournissez **une** source, soit `url`, soit `base64`.
 | `base64`    | String  | L'autre | Le fichier sous forme de data URI, par ex. `data:image/jpeg;base64,/9j/4AAQ...`. À utiliser quand le fichier n'est pas hébergé publiquement.   |
 | `file_name` | String  | Non    | Nom du fichier. Pour les documents, c'est le nom que voit le client : incluez l'extension (`facture.pdf`).                                       |
 | `extension` | String  | Non    | Ajoutée à `file_name`. Ne la renseignez pas si `file_name` se termine déjà par l'extension, sinon vous obtiendrez `facture.pdf.pdf`.             |
-| `voice`     | Boolean | Non    | Audio uniquement. Envoie le fichier comme message vocal WhatsApp. Voir [Message Audio](/fr/developer-guides/livechat/outgoing-messages/attachments/audio_message). |
+| `caption`   | String  | Non    | Texte affiché sous le fichier, dans le même message. Images, vidéos et documents uniquement. Voir [Texte avec une pièce jointe](#texte-avec-une-pièce-jointe). |
+| `voice`     | Boolean | Non    | Audio uniquement. Demande un message vocal WhatsApp. Fonctionne uniquement sur l'API WhatsApp : voir [Message Audio](/fr/developer-guides/livechat/outgoing-messages/attachments/audio_message). |
 | `duration`  | Number  | Non    | Audio uniquement. Durée en secondes, enregistrée avec le message.                                                                                |
 
 #### Envoyer un fichier depuis une URL
@@ -196,15 +199,15 @@ Le type de fournisseur est le type de l'instance de fournisseur d'API à laquell
 
 | Type de fournisseur                | Code           | Image  | Vidéo  | Audio  | Document | Sticker                          |
 | :--------------------------------- | :------------- | :----- | :----- | :----- | :------- | :------------------------------- |
-| **WhatsApp Business**              | `whatsapp`     | 5 Mo   | 16 Mo  | 16 Mo  | 100 Mo   | 100 Ko statique, 500 Ko animé    |
-| **Numéro WhatsApp partagé**        | `centrelatio`  | 5 Mo   | 16 Mo  | 16 Mo  | 100 Mo   | 100 Ko statique, 500 Ko animé    |
-| **WhatsApp Web** (lié par QR)      | `whatsapp_web` | 100 Mo | 100 Mo | 100 Mo | 100 Mo   | 100 Mo                           |
+| **API WhatsApp**              | `whatsapp`     | 5 Mo   | 16 Mo  | 16 Mo  | 100 Mo   | 100 Ko statique, 500 Ko animé    |
+| **API WhatsApp** (numéro partagé)        | `centrelatio`  | 5 Mo   | 16 Mo  | 16 Mo  | 100 Mo   | 100 Ko statique, 500 Ko animé    |
+| **WhatsApp Business** ou **Messenger** (lié par QR)      | `whatsapp_web` | 100 Mo* | 100 Mo* | 100 Mo* | 100 Mo*   | 100 Mo*                           |
 | **Telegram**                       | `telegram`     | 10 Mo  | 50 Mo  | 50 Mo  | 50 Mo    | Règles des stickers Telegram     |
 | **Messenger**                      | `messenger`    | 25 Mo  | 25 Mo  | 25 Mo  | 25 Mo    | Non pris en charge               |
 | **Web Chat**                       | `web_chat`     | 100 Mo | 100 Mo | 100 Mo | 100 Mo   | 100 Mo                           |
 
-- **WhatsApp Business et numéro partagé** : Digishare vérifie la taille avant l'envoi et rejette un fichier trop volumineux au lieu de l'envoyer.
-- **WhatsApp Web** : aucun des plafonds par type de WhatsApp Business ne s'applique ; seule la limite Digishare de 100 Mo (aussi celle de la passerelle) joue. WhatsApp peut tout de même refuser de très gros médias.
+- **API WhatsApp et numéro partagé** : Digishare vérifie la taille avant l'envoi et rejette un fichier trop volumineux au lieu de l'envoyer.
+- **WhatsApp Business et Messenger (liés par QR)** : aucun des plafonds par type de l'API WhatsApp ne s'applique. Les 100 Mo* sont la limite de Digishare (aussi celle de la passerelle), pas une promesse que WhatsApp livrera le fichier : WhatsApp peut refuser de très gros médias.
 - **Telegram et Messenger** : ce sont les limites propres au fournisseur (API Bot Telegram, Meta). Digishare ne les vérifie pas au préalable : un fichier trop volumineux est accepté par Digishare puis refusé par le fournisseur.
 - **Web Chat** : seule la limite Digishare s'applique quand vous écrivez à un visiteur. Les fichiers qu'un visiteur envoie depuis le widget sont limités à 15 Mo par défaut.
 
@@ -225,10 +228,91 @@ Pour un upload, vous ne déclarez jamais le type de la pièce jointe. Digishare 
 Une **image WebP est livrée comme sticker**, pas comme photo, et les stickers ont une limite de taille bien plus basse. Convertissez en JPEG ou PNG pour obtenir une image classique.
 ::
 
+## Texte avec une pièce jointe
+
+Ajoutez une **légende** à une image, une vidéo ou un document et elle arrive dans le **même message**, sous le fichier.
+
+| Façon d'envoyer              | Champ          |
+| :--------------------------- | :------------- |
+| Par lien (API d'événements)  | `body.caption` |
+| Par upload (API Messages)    | `file.caption` |
+
+Par lien :
+
+```json
+{
+  "event_type": "conversation_message",
+  "conversation_id": "CONV_123",
+  "send_to_third": true,
+  "type": "document",
+  "body": {
+    "link": "https://example.com/files/facture-2026-001.pdf",
+    "filename": "facture-2026-001.pdf",
+    "caption": "Votre facture d'octobre, merci !"
+  }
+}
+```
+
+Par upload :
+
+```json
+{
+  "conversation_id": "CONV_123",
+  "send_to_third": true,
+  "file": {
+    "url": "https://example.com/files/facture-2026-001.pdf",
+    "file_name": "facture-2026-001.pdf",
+    "caption": "Votre facture d'octobre, merci !"
+  }
+}
+```
+
+- **Quels fichiers :** images, vidéos et documents (PDF et autres fichiers). Les fichiers audio et les stickers n'acceptent pas de légende : elle est ignorée et le fichier est livré sans elle.
+- **Longueur :** jusqu'à 1024 caractères ; un texte plus long est coupé. Les espaces au début et à la fin sont retirés. Les emojis et le texte arabe sont acceptés.
+- **Optionnel :** un message sans `caption` est envoyé exactement comme avant. Pour un upload, `body` reste ignoré quand `file` est présent : utilisez `file.caption`.
+- **Fournisseurs :** vérifié sur les numéros WhatsApp Business et Messenger (liés par QR), où le fichier et la légende arrivent dans un seul message. L'API WhatsApp prend les légendes en charge nativement et reçoit le même champ, mais nous ne l'avons pas encore testé. Sur les autres types de fournisseur, envoyez le texte dans un second message.
+
+::note
+Dans l'inbox Digishare, la légende s'affiche sous les PDF et les autres documents. Les bulles d'image et de vidéo affichent encore un libellé générique (Photo, Vidéo) à la place de la légende. Le client reçoit la légende dans tous les cas.
+::
+
+### Avec des boutons de réponse
+
+Pour envoyer un fichier, du texte et au moins un bouton de réponse dans un seul message, utilisez un message interactif qui porte le média en en-tête et votre texte en corps.
+
+```json
+{
+  "event_type": "conversation_message",
+  "conversation_id": "CONV_123",
+  "send_to_third": true,
+  "type": "interactive",
+  "body": {
+    "type": "button",
+    "header": { "type": "image", "image": { "link": "https://example.com/images/promo.jpg" } },
+    "body": { "text": "Votre texte ici" },
+    "action": {
+      "buttons": [ { "type": "reply", "reply": { "id": "ok", "title": "OK" } } ]
+    }
+  }
+}
+```
+
+La façon dont le message interactif arrive dépend du type de fournisseur :
+
+| Type de fournisseur                                | Ce que reçoit le client                                                                                                                                       |
+| :------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **API WhatsApp** (`whatsapp`, `centrelatio`)       | Un seul message : le média, votre texte et les boutons.                                                                                                       |
+| **WhatsApp Business / Messenger** (`whatsapp_web`) | **Deux messages** : d'abord le média, puis votre texte avec les boutons sous forme de menu numéroté (« Reply with a number »). Les boutons sont émulés sur les numéros liés par QR. |
+| Autres types de fournisseur                        | Envoyez plutôt deux messages.                                                                                                                                 |
+
+::note
+L'en-tête peut être une `image`, une `video` ou un `document` ; les fichiers audio et les stickers ne peuvent pas être un en-tête. Seuls les messages à boutons de réponse conservent un en-tête média : les menus liste le suppriment. Sur l'API WhatsApp, un message interactif est soumis à la fenêtre de 24 heures.
+::
+
 ## À savoir
 
-::warning
-**Pas de légende sur WhatsApp.** Les pièces jointes sont livrées sans légende, et `body` est ignoré lorsqu'un upload contient un `file`. Pour ajouter du texte, envoyez un [Message Texte](/fr/developer-guides/livechat/outgoing-messages/text_message) juste après le fichier.
+::note
+**`body` n'est pas une légende.** Pour un upload, `body` est ignoré quand un `file` est présent. Placez la légende dans `file.caption` : voir [Texte avec une pièce jointe](#texte-avec-une-pièce-jointe).
 ::
 
 ::warning
@@ -240,5 +324,9 @@ Une **image WebP est livrée comme sticker**, pas comme photo, et les stickers o
 ::
 
 ::note
-**Fenêtre de 24 heures.** Comme tout message libre, une pièce jointe envoyée plus de 24 heures après le dernier message du client peut être restreinte par votre fournisseur. Voir [Envoyer un Message](/fr/developer-guides/livechat/conversation/send-message-conversation).
+**Fenêtre de 24 heures.** Sur l'API WhatsApp, une pièce jointe envoyée plus de 24 heures après le dernier message du client peut être restreinte. Les numéros WhatsApp Business et Messenger (liés par QR) n'ont pas cette fenêtre. Voir [Envoyer un Message](/fr/developer-guides/livechat/conversation/send-message-conversation).
+::
+
+::warning
+**Les numéros liés par QR sont limités en débit.** Les numéros WhatsApp Business et Messenger envoient via une passerelle qui protège le numéro. Par défaut, elle accepte une rafale de 5 messages, puis environ 12 par minute, avec une courte pause aléatoire entre les messages, et un plafond quotidien qui grandit avec l'ancienneté du lien (30 messages par jour les 3 premiers jours, 100 jusqu'au 7e jour, puis 500). Un message au-delà d'une limite n'est pas envoyé immédiatement mais réessayé plus tard : une rafale de pièces jointes peut donc arriver avec plusieurs minutes de retard. Ce sont des valeurs par défaut et votre configuration peut différer.
 ::

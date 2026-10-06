@@ -17,11 +17,12 @@ Images, videos, audio files and documents can be sent in two ways.
 | **Shown in the Digishare inbox** | No: agents see an empty bubble                                    | Yes                                                  |
 | **Provider types**               | WhatsApp only (`whatsapp`, `centrelatio`, `whatsapp_web`)         | All                                                  |
 | **Message `type`**               | You set it                                                        | Detected from the file                               |
-| **Voice notes and `reply_to`**   | No                                                                | Yes                                                  |
+| **Caption (text with the file)** | `body.caption`                                                    | `file.caption`                                       |
+| **Voice notes (WhatsApp API) and `reply_to`** | No                                                   | Yes                                                  |
 | **Digishare size limit**         | None: WhatsApp fetches the file and applies its own limits        | 100 MB                                               |
 
 ::tip
-Use a **link** for high-volume sends, or when your files are already hosted and agents do not need to see them in the inbox. Use an **upload** when agents must see the file in the inbox, you only have the file's bytes, you need a voice note, or the provider is Telegram or Messenger.
+Use a **link** for high-volume sends, or when your files are already hosted and agents do not need to see them in the inbox. Use an **upload** when agents must see the file in the inbox, you only have the file's bytes, you need a voice note (WhatsApp API only), or the provider is Telegram or Messenger.
 ::
 
 ## Send by link
@@ -35,6 +36,7 @@ Put a public HTTPS link in `body` and set the attachment `type`. Digishare does 
 | `type`                   | String | **Yes**  | `image`, `video`, `audio`, `document` or `sticker`. Digishare does not inspect the link, so it must match the file. |
 | `body.link`              | String | **Yes**  | Public HTTPS link to the file. WhatsApp must be able to reach it without logging in.                          |
 | `body.filename`          | String | No       | Documents only. The name the customer sees, including the extension (`invoice.pdf`).                          |
+| `body.caption`           | String | No       | Text shown under the file, in the same message. Images, videos and documents only. See [Text with an attachment](#text-with-an-attachment). |
 | `conversation_id`        | String | **Yes**\* | The conversation. See [Send on Conversation](/developer-guides/livechat/conversation/send-on-conversation) for the alternative with `recipient_id`. |
 | `send_to_third`          | Boolean | No      | Defaults to `true`.                                                                                          |
 
@@ -104,7 +106,8 @@ Provide **one** source, either `url` or `base64`.
 | `base64`    | String | One of   | The file as a data URI, e.g. `data:image/jpeg;base64,/9j/4AAQ...`. Use this when the file is not publicly hosted.                            |
 | `file_name` | String | No       | Name of the file. For documents this is the name the customer sees, so include the extension (`invoice.pdf`).                                |
 | `extension` | String | No       | Appended to `file_name`. Leave it out when `file_name` already ends with the extension, or you will get `invoice.pdf.pdf`.                   |
-| `voice`     | Boolean | No      | Audio only. Send the file as a WhatsApp voice note. See [Audio Message](/developer-guides/livechat/outgoing-messages/attachments/audio_message).         |
+| `caption`   | String | No       | Text shown under the file, in the same message. Images, videos and documents only. See [Text with an attachment](#text-with-an-attachment). |
+| `voice`     | Boolean | No      | Audio only. Ask for a WhatsApp voice note. Works on the WhatsApp API only: see [Audio Message](/developer-guides/livechat/outgoing-messages/attachments/audio_message). |
 | `duration`  | Number | No       | Audio only. Length in seconds, stored with the message.                                                                                      |
 
 #### Sending a file from a URL
@@ -196,15 +199,15 @@ The provider type is the type of the API provider instance the conversation belo
 
 | Provider type                 | Code           | Image  | Video  | Audio  | Document | Sticker                   |
 | :---------------------------- | :------------- | :----- | :----- | :----- | :------- | :------------------------ |
-| **WhatsApp Business**         | `whatsapp`     | 5 MB   | 16 MB  | 16 MB  | 100 MB   | 100 KB static, 500 KB animated |
-| **Shared WhatsApp number**    | `centrelatio`  | 5 MB   | 16 MB  | 16 MB  | 100 MB   | 100 KB static, 500 KB animated |
-| **WhatsApp Web** (QR-linked)  | `whatsapp_web` | 100 MB | 100 MB | 100 MB | 100 MB   | 100 MB                    |
+| **WhatsApp API**         | `whatsapp`     | 5 MB   | 16 MB  | 16 MB  | 100 MB   | 100 KB static, 500 KB animated |
+| **WhatsApp API** (shared number)    | `centrelatio`  | 5 MB   | 16 MB  | 16 MB  | 100 MB   | 100 KB static, 500 KB animated |
+| **WhatsApp Business** or **Messenger** (QR-linked)  | `whatsapp_web` | 100 MB* | 100 MB* | 100 MB* | 100 MB*   | 100 MB*                    |
 | **Telegram**                  | `telegram`     | 10 MB  | 50 MB  | 50 MB  | 50 MB    | Telegram sticker rules    |
 | **Messenger**                 | `messenger`    | 25 MB  | 25 MB  | 25 MB  | 25 MB    | Not supported             |
 | **Web Chat**                  | `web_chat`     | 100 MB | 100 MB | 100 MB | 100 MB   | 100 MB                    |
 
-- **WhatsApp Business and the shared number**: Digishare checks the size before uploading and rejects an oversized file instead of sending it.
-- **WhatsApp Web**: none of the WhatsApp Business per-type caps apply; only the 100 MB Digishare limit (also the gateway's cap). WhatsApp itself may still refuse very large media.
+- **WhatsApp API and the shared number**: Digishare checks the size before uploading and rejects an oversized file instead of sending it.
+- **WhatsApp Business and Messenger (QR-linked)**: none of the WhatsApp API per-type caps apply. The 100 MB* is Digishare's cap (also the gateway's), not a promise that WhatsApp will deliver it: WhatsApp itself may refuse very large media.
 - **Telegram and Messenger**: these are the provider's own limits (Telegram Bot API, Meta). Digishare does not check them first, so an oversized file is accepted by Digishare and refused by the provider.
 - **Web Chat**: only the Digishare limit applies when you send to a visitor. Files a visitor uploads from the widget are limited to 15 MB by default.
 
@@ -225,10 +228,91 @@ For an upload you never declare the attachment type. Digishare inspects the file
 A **WebP image is delivered as a sticker**, not as a photo, and stickers have a much smaller size limit. Convert to JPEG or PNG if you want a regular image.
 ::
 
+## Text with an attachment
+
+Add a **caption** to an image, video or document and it arrives in the **same message**, under the file.
+
+| Way to send              | Field          |
+| :----------------------- | :------------- |
+| By link (Event API)      | `body.caption` |
+| By upload (Messages API) | `file.caption` |
+
+By link:
+
+```json
+{
+  "event_type": "conversation_message",
+  "conversation_id": "CONV_123",
+  "send_to_third": true,
+  "type": "document",
+  "body": {
+    "link": "https://example.com/files/invoice-2026-001.pdf",
+    "filename": "invoice-2026-001.pdf",
+    "caption": "Your invoice for October, thank you!"
+  }
+}
+```
+
+By upload:
+
+```json
+{
+  "conversation_id": "CONV_123",
+  "send_to_third": true,
+  "file": {
+    "url": "https://example.com/files/invoice-2026-001.pdf",
+    "file_name": "invoice-2026-001.pdf",
+    "caption": "Your invoice for October, thank you!"
+  }
+}
+```
+
+- **Which files:** images, videos and documents (PDF and other files). Audio files and stickers take no caption: it is ignored and the file is delivered without it.
+- **Length:** up to 1024 characters; a longer text is cut. Leading and trailing spaces are removed. Emoji and Arabic text are fine.
+- **Optional:** a message without `caption` is sent exactly as before. On an upload, `body` is still ignored when `file` is present: use `file.caption`.
+- **Providers:** verified on WhatsApp Business and Messenger numbers (QR-linked), where the file and the caption arrive as one message. The WhatsApp API supports captions natively and receives the same field, but we have not tested it yet. On other provider types, send the text as a second message.
+
+::note
+In the Digishare inbox, the caption shows under PDFs and other documents. Image and video bubbles still show a generic label (Photo, Video) instead of the caption. The customer receives the caption either way.
+::
+
+### With reply buttons
+
+To send a file, text and at least one reply button in one message, use an interactive message that carries the media as its header and your text as its body.
+
+```json
+{
+  "event_type": "conversation_message",
+  "conversation_id": "CONV_123",
+  "send_to_third": true,
+  "type": "interactive",
+  "body": {
+    "type": "button",
+    "header": { "type": "image", "image": { "link": "https://example.com/images/promo.jpg" } },
+    "body": { "text": "Your text here" },
+    "action": {
+      "buttons": [ { "type": "reply", "reply": { "id": "ok", "title": "OK" } } ]
+    }
+  }
+}
+```
+
+How the interactive message arrives depends on the provider type:
+
+| Provider type                                     | What the customer receives                                                                                                                                  |
+| :------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **WhatsApp API** (`whatsapp`, `centrelatio`)      | One message: the media, your text and the buttons.                                                                                                          |
+| **WhatsApp Business / Messenger** (`whatsapp_web`) | **Two messages**: the media first, then your text with the buttons as a numbered menu ("Reply with a number"). Buttons are emulated on QR-linked numbers. |
+| Other provider types                              | Send two messages instead.                                                                                                                                  |
+
+::note
+The header can be an `image`, `video` or `document`; audio files and stickers cannot be a header. Only reply-button messages keep a media header: list menus drop it. On the WhatsApp API, an interactive message is subject to the 24-hour window.
+::
+
 ## Things to know
 
-::warning
-**No captions on WhatsApp.** Attachments are delivered without a caption, and `body` is ignored when an upload has a `file`. To add text, send a separate [Text Message](/developer-guides/livechat/outgoing-messages/text_message) right after the file.
+::note
+**`body` is not a caption.** On an upload, `body` is ignored when a `file` is present. Put the caption in `file.caption`: see [Text with an attachment](#text-with-an-attachment).
 ::
 
 ::warning
@@ -240,5 +324,9 @@ A **WebP image is delivered as a sticker**, not as a photo, and stickers have a 
 ::
 
 ::note
-**24-hour window.** Like any free-form message, an attachment sent more than 24 hours after the customer's last message may be restricted by your provider. See [Send on Conversation](/developer-guides/livechat/conversation/send-on-conversation).
+**24-hour window.** On the WhatsApp API, an attachment sent more than 24 hours after the customer's last message may be restricted. WhatsApp Business and Messenger numbers (QR-linked) have no such window. See [Send on Conversation](/developer-guides/livechat/conversation/send-on-conversation).
+::
+
+::warning
+**QR-linked numbers are rate-limited.** WhatsApp Business and Messenger numbers send through a gateway that protects the number. By default it takes a burst of 5 messages, then about 12 per minute, with a short random pause between messages, and a daily cap that grows with the age of the link (30 messages a day for the first 3 days, 100 until day 7, then 500). A message over a limit is not sent immediately but retried later, so a burst of attachments can arrive minutes late. These are default values and your setup may differ.
 ::
