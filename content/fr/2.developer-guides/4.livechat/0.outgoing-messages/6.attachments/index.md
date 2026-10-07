@@ -2,27 +2,25 @@
 navigation:
   title: Vue d'ensemble
 title: Pièces jointes
-description: Envoyez des images, vidéos, fichiers audio et documents dans une conversation, par lien ou par upload.
+description: Envoyez des images, vidéos, fichiers audio et documents dans une conversation avec l'API d'événements, par lien ou comme fichier.
 icon: i-mdi-paperclip
 ---
 
-Les images, vidéos, fichiers audio et documents peuvent être envoyés de deux façons.
+Les images, vidéos, fichiers audio et documents sont envoyés avec l'[API d'événements](/fr/developer-guides/livechat/conversation/send-message-conversation) : `POST https://api-app.digishare.ma/v1/event/conversation_message`. Il y a deux façons de joindre un fichier.
 
-|                                       | **Par lien** (API d'événements, recommandé)                       | **Par upload** (API Messages)                         |
-| :------------------------------------ | :---------------------------------------------------------------- | :---------------------------------------------------- |
-| **Endpoint**                          | `POST https://api-app.digishare.ma/v1/event/conversation_message` | `POST https://api.digishare.ma/v1/messages`           |
-| **Vous envoyez**                      | Un lien HTTPS public dans `body`                                  | Le fichier lui-même (`url` ou `base64`) dans `file`   |
-| **Traitement**                        | File d'attente : `202` aussitôt                                   | Synchrone : renvoie le message créé                   |
-| **Digishare conserve le fichier**     | Non                                                               | Oui                                                   |
-| **Visible dans l'inbox Digishare**    | Non : les agents voient une bulle vide                            | Oui                                                   |
-| **Types de fournisseur**              | WhatsApp uniquement (`whatsapp`, `centrelatio`, `whatsapp_web`)   | Tous                                                  |
-| **`type` du message**                 | Vous le définissez                                                | Détecté à partir du fichier                           |
-| **Légende (texte avec le fichier)**   | `body.caption`                                                    | `file.caption`                                        |
-| **Messages vocaux (API WhatsApp) et `reply_to`** | Non                                                    | Oui                                                   |
-| **Limite de taille Digishare**        | Aucune : WhatsApp récupère le fichier et applique ses propres limites | 100 Mo                                            |
+|                                       | **Par lien**                                                       | **Comme fichier (base64)**                            |
+| :------------------------------------ | :----------------------------------------------------------------- | :---------------------------------------------------- |
+| **Vous envoyez**                      | Un lien HTTPS public dans `body.link`                              | Le fichier lui-même, encodé en base64, dans `file.base64` |
+| **Traitement**                        | File d'attente : `202` aussitôt                                    | File d'attente : `202` aussitôt                       |
+| **Digishare conserve le fichier**     | Non                                                                | Oui                                                   |
+| **Visible dans l'inbox Digishare**    | Non : les agents voient une bulle vide                             | Oui                                                   |
+| **Types de fournisseur**              | WhatsApp uniquement (`whatsapp`, `centrelatio`, `whatsapp_web`)    | Tous                                                  |
+| **`type` du message**                 | Vous le définissez                                                 | Détecté à partir du fichier                           |
+| **Légende (texte avec le fichier)**   | `body.caption`                                                     | `file.caption`                                        |
+| **Limite de taille**                  | Aucune côté Digishare : WhatsApp récupère le fichier et applique ses propres limites | Environ 700 Ko (1 Mo par événement)   |
 
 ::tip
-Utilisez un **lien** pour les envois à fort volume, ou quand vos fichiers sont déjà hébergés et que les agents n'ont pas besoin de les voir dans l'inbox. Utilisez un **upload** quand les agents doivent voir le fichier dans l'inbox, que vous n'avez que les octets du fichier, que vous avez besoin d'un message vocal (API WhatsApp uniquement), ou que le fournisseur est Telegram ou Messenger.
+Utilisez un **lien** pour les gros fichiers, les envois à fort volume, ou quand vos fichiers sont déjà hébergés et que les agents n'ont pas besoin de les voir dans l'inbox. Envoyez un **fichier** quand les agents doivent le voir dans l'inbox, ou quand il est petit (moins de 700 Ko environ) et hébergé nulle part.
 ::
 
 ## Envoi par lien
@@ -69,100 +67,29 @@ responseSample:
 ::
 
 ::warning
-**Non visible dans l'inbox.** Le message est livré au client, mais l'inbox Digishare n'a aucun fichier à prévisualiser : les agents voient donc une bulle vide. Utilisez un upload quand les agents doivent voir le fichier.
+**Non visible dans l'inbox.** Le message est livré au client, mais l'inbox Digishare n'a aucun fichier à prévisualiser : les agents voient donc une bulle vide. Envoyez-le comme fichier quand les agents doivent le voir.
 ::
 
-## Envoi par upload
+## Envoyer un fichier (base64)
 
-::warning
-**Prérequis** : `conversation_id` est requis sur ce point de terminaison. Voir [Intégration LiveChat](/fr/developer-guides/livechat/integration).
-::
+Placez le fichier dans `file` au lieu d'un lien dans `body`. Digishare le conserve, l'affiche dans l'inbox et détecte son type.
 
-Passez un objet **`file`** à la place d'un `body` texte. Digishare enregistre le fichier, détecte son type et le livre sur le canal du client.
-
-**Point de terminaison** : `POST https://api.digishare.ma/v1/messages`
-
-### Corps de la Requête
-
-| Paramètre         | Type    | Requis  | Description                                                                                              |
-| :---------------- | :------ | :------ | :------------------------------------------------------------------------------------------------------- |
-| `conversation_id` | String  | **Oui** | ID de la conversation : issu de l'événement webhook, ou de [Créer une conversation](/fr/developer-guides/livechat/conversation/create-conversation).             |
-| `send_to_third`   | Boolean | **Oui** | Mettre à `true` pour livrer le fichier à la plateforme de l'utilisateur (par ex. WhatsApp).              |
-| `file`            | Object  | **Oui** | La pièce jointe. Voir [L'objet file](#lobjet-file). Remplace `body`.                                     |
-| `reply_to`        | String  | Non     | ID d'un message de la même conversation à citer.                                                         |
-| `type`            | String  | Non     | Inutile. Le type du message est détecté à partir du fichier (voir [Détection du type](#détection-du-type)). |
-
-::tip
-**Pas encore d'ID de conversation ?** Appelez [Créer une conversation](/fr/developer-guides/livechat/conversation/create-conversation) avec votre instance de fournisseur et le numéro du destinataire, puis utilisez l'`id` renvoyé. Par défaut, cet appel archive d'abord la conversation active du client ; passez `archive_active_conversation: false` pour la réutiliser.
-::
-
-### L'objet file
-
-Fournissez **une** source, soit `url`, soit `base64`.
-
-| Champ       | Type    | Requis | Description                                                                                                                                      |
-| :---------- | :------ | :----- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`       | String  | L'un   | Lien `http(s)` public vers le fichier. Digishare le télécharge, il doit donc être accessible depuis Internet.                                    |
-| `base64`    | String  | L'autre | Le fichier sous forme de data URI, par ex. `data:image/jpeg;base64,/9j/4AAQ...`. À utiliser quand le fichier n'est pas hébergé publiquement.   |
-| `file_name` | String  | Non    | Nom du fichier. Pour les documents, c'est le nom que voit le client : incluez l'extension (`facture.pdf`).                                       |
-| `extension` | String  | Non    | Ajoutée à `file_name`. Ne la renseignez pas si `file_name` se termine déjà par l'extension, sinon vous obtiendrez `facture.pdf.pdf`.             |
-| `caption`   | String  | Non    | Texte affiché sous le fichier, dans le même message. Images, vidéos et documents uniquement. Voir [Texte avec une pièce jointe](#texte-avec-une-pièce-jointe). |
-| `voice`     | Boolean | Non    | Audio uniquement. Demande un message vocal WhatsApp. Fonctionne uniquement sur l'API WhatsApp : voir [Message Audio](/fr/developer-guides/livechat/outgoing-messages/attachments/audio_message). |
-| `duration`  | Number  | Non    | Audio uniquement. Durée en secondes, enregistrée avec le message.                                                                                |
-
-#### Envoyer un fichier depuis une URL
-
-::api-playground
----
-method: POST
-url: "https://api.digishare.ma/v1/messages"
-headers:
-  Authorization: "Bearer VOTRE_TOKEN"
-  Content-Type: "application/json"
-body:
-  send_to_third: true
-  conversation_id: "CONV_123"
-  file:
-    url: "https://example.com/files/facture-2026-001.pdf"
-    file_name: "facture-2026-001.pdf"
-responseSample:
-  data:
-    object: "Message"
-    id: "MSG_ID"
-    conversation_id: "CONV_123"
-    type: "pdf"
-    body:
-      id: 48213
-      name: "facture-2026-001"
-      file_name: "facture-2026-001.pdf"
-      mime_type: "application/pdf"
-      extension: "pdf"
-      size: 91204
-      type: "pdf"
-      url: "companies/public/message/48213/facture-2026-001.pdf"
-      path: "companies/public/message/48213/facture-2026-001.pdf"
-    send_to_third: true
-    system: false
-    status: "sent"
----
-::
-
-#### Envoyer un fichier en base64
+**Endpoint** : `POST https://api-app.digishare.ma/v1/event/conversation_message`
 
 ```json
 {
-  "send_to_third": true,
+  "event_type": "conversation_message",
   "conversation_id": "CONV_123",
+  "body": "",
   "file": {
-    "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...",
-    "file_name": "photo.jpg"
+    "base64": "JVBERi0xLjQK...",
+    "file_name": "facture-2026-001.pdf",
+    "caption": "Votre facture d'octobre, merci !"
   }
 }
 ```
 
-::tip
-Le base64 alourdit la requête d'environ un tiers. Pour les fichiers de plus de quelques mégaoctets, hébergez le fichier et utilisez `url`.
-::
+Chaque champ, la limite de taille, les types de fichiers autorisés, ce qui arrive à un fichier refusé et un exemple curl complet se trouvent sur [Envoyer un Message](/fr/developer-guides/livechat/conversation/send-message-conversation#envoyer-un-fichier-base64).
 
 ## Types pris en charge
 
@@ -174,24 +101,13 @@ Le base64 alourdit la requête d'environ un tiers. Pour les fichiers de plus de 
 | **Document** | PDF, DOCX, XLSX, PPTX, TXT, CSV, ZIP, ... | [Message Document](/fr/developer-guides/livechat/outgoing-messages/attachments/document_message)  |
 | **Sticker**  | WebP                                      | Voir [Détection du type](#détection-du-type)                                          |
 
+::note
+**Comme fichier**, Digishare accepte les PDF ; les images JPEG, PNG, WebP et GIF ; les vidéos MP4 et 3GP ; l'audio OGG, MP3, M4A, AAC et AMR ; DOC, DOCX, XLS, XLSX, PPT et PPTX ; TXT et CSV. C'est le contenu qui décide, pas le nom, et tout autre type est refusé. **Par lien**, Digishare ne vérifie rien : c'est WhatsApp qui décide.
+::
+
 ## Limites de taille des fichiers
 
-Pour un **upload**, deux limites s'appliquent : celle de Digishare, et celle du type de fournisseur derrière la conversation. La **plus basse** l'emporte. Pour un **lien**, Digishare ne télécharge rien : seules les limites du fournisseur s'appliquent, car WhatsApp récupère lui-même le fichier et rejette un fichier trop volumineux.
-
-### Limite Digishare
-
-**100 Mo par fichier**, pour tous les types de fournisseur et tous les types de fichier. L'API refuse un corps de requête de plus de 100 Mo avec un HTTP `413` (une page d'erreur HTML de la passerelle, pas du JSON).
-
-- Avec `url`, Digishare télécharge le fichier pendant le traitement de votre requête : hébergez-le sur un serveur rapide et fiable. Les fichiers jusqu'à 104 857 600 octets (100 Mio) sont acceptés. Un fichier de plus de 100 Mo n'est pas enregistré : le message revient sous la forme de l'espace réservé `unsupported file type` décrit dans [À savoir](#à-savoir).
-- Avec `base64`, le fichier entier est décodé en mémoire sur le serveur de l'API, et le base64 ajoute environ un tiers à la requête. Lors de nos tests, un fichier de 25 Mo a été accepté, tandis qu'un fichier de 40 Mo a échoué avec un HTTP `500` en laissant un message vide dans la conversation. Utilisez `base64` pour les fichiers jusqu'à 25 Mo et `url` au-delà.
-
-::tip
-En cas de doute, hébergez le fichier et utilisez `url`.
-::
-
-::note
-**API d'événements.** Le point de terminaison d'événements sur `api-app.digishare.ma` n'accepte pas d'uploads : il transporte des liens (voir [Envoi par lien](#envoi-par-lien)). Chaque événement est limité à **1 Mo** ; un événement plus gros est rejeté avec `413 payload_too_large`.
-::
+Pour un **fichier**, la limite de l'événement s'applique d'abord (1 Mo par événement, soit environ 700 Ko de fichier), puis celle du type de fournisseur derrière la conversation : la **plus basse** l'emporte. Pour un **lien**, Digishare ne télécharge rien : seules les limites du fournisseur s'appliquent, car WhatsApp récupère lui-même le fichier et refuse celui qui est trop volumineux.
 
 ### Limites par type de fournisseur
 
@@ -209,11 +125,11 @@ Le type de fournisseur est le type de l'instance de fournisseur d'API à laquell
 - **API WhatsApp et numéro partagé** : Digishare vérifie la taille avant l'envoi et rejette un fichier trop volumineux au lieu de l'envoyer.
 - **WhatsApp Business et Messenger (liés par QR)** : aucun des plafonds par type de l'API WhatsApp ne s'applique. Les 100 Mo* sont la limite de Digishare (aussi celle de la passerelle), pas une promesse que WhatsApp livrera le fichier : WhatsApp peut refuser de très gros médias.
 - **Telegram et Messenger** : ce sont les limites propres au fournisseur (API Bot Telegram, Meta). Digishare ne les vérifie pas au préalable : un fichier trop volumineux est accepté par Digishare puis refusé par le fournisseur.
-- **Web Chat** : seule la limite Digishare s'applique quand vous écrivez à un visiteur. Les fichiers qu'un visiteur envoie depuis le widget sont limités à 15 Mo par défaut.
+- **Web Chat** : aucune limite de fournisseur ne s'applique quand vous écrivez à un visiteur ; pour un fichier, la limite de l'événement s'applique toujours. Les fichiers qu'un visiteur envoie depuis le widget sont limités à 15 Mo par défaut.
 
 ## Détection du type
 
-Pour un upload, vous ne déclarez jamais le type de la pièce jointe. Digishare inspecte le fichier et choisit à la fois son mode de livraison et le `type` enregistré sur le message.
+Pour un fichier envoyé en base64, vous ne déclarez jamais le type de la pièce jointe. Digishare inspecte son contenu et choisit à la fois son mode de livraison et le `type` enregistré sur le message.
 
 | Fichier                                      | Livré sur WhatsApp comme | `type` dans les réponses et webhooks |
 | :------------------------------------------- | :----------------------- | :----------------------------------- |
@@ -222,7 +138,7 @@ Pour un upload, vous ne déclarez jamais le type de la pièce jointe. Digishare 
 | MP4, 3GPP                                    | Vidéo                    | `video`                              |
 | OGG, MP3, M4A, AAC, AMR                      | Audio                    | `audio`                              |
 | PDF                                          | Document                 | `pdf`                                |
-| Tout le reste (DOCX, XLSX, CSV, ZIP, ...)    | Document                 | `other`                              |
+| Tout le reste (DOCX, XLSX, TXT, CSV, ...)   | Document                 | `other`                              |
 
 ::warning
 Une **image WebP est livrée comme sticker**, pas comme photo, et les stickers ont une limite de taille bien plus basse. Convertissez en JPEG ou PNG pour obtenir une image classique.
@@ -232,10 +148,10 @@ Une **image WebP est livrée comme sticker**, pas comme photo, et les stickers o
 
 Ajoutez une **légende** à une image, une vidéo ou un document et elle arrive dans le **même message**, sous le fichier.
 
-| Façon d'envoyer              | Champ          |
-| :--------------------------- | :------------- |
-| Par lien (API d'événements)  | `body.caption` |
-| Par upload (API Messages)    | `file.caption` |
+| Façon d'envoyer | Champ                                                                     |
+| :-------------- | :------------------------------------------------------------------------ |
+| Par lien        | `body.caption`                                                            |
+| Comme fichier   | `file.caption`, ou un `body` non vide quand `file.caption` est absent     |
 
 Par lien :
 
@@ -253,14 +169,15 @@ Par lien :
 }
 ```
 
-Par upload :
+Comme fichier :
 
 ```json
 {
+  "event_type": "conversation_message",
   "conversation_id": "CONV_123",
-  "send_to_third": true,
+  "body": "",
   "file": {
-    "url": "https://example.com/files/facture-2026-001.pdf",
+    "base64": "JVBERi0xLjQK...",
     "file_name": "facture-2026-001.pdf",
     "caption": "Votre facture d'octobre, merci !"
   }
@@ -269,12 +186,8 @@ Par upload :
 
 - **Quels fichiers :** images, vidéos et documents (PDF et autres fichiers). Les fichiers audio et les stickers n'acceptent pas de légende : elle est ignorée et le fichier est livré sans elle.
 - **Longueur :** jusqu'à 1024 caractères ; un texte plus long est coupé. Les espaces au début et à la fin sont retirés. Les emojis et le texte arabe sont acceptés.
-- **Optionnel :** un message sans `caption` est envoyé exactement comme avant. Pour un upload, `body` reste ignoré quand `file` est présent : utilisez `file.caption`.
+- **Optionnel :** un message sans `caption` est envoyé exactement comme avant.
 - **Fournisseurs :** vérifié sur les numéros WhatsApp Business et Messenger (liés par QR), où le fichier et la légende arrivent dans un seul message. L'API WhatsApp prend les légendes en charge nativement et reçoit le même champ, mais nous ne l'avons pas encore testé. Sur les autres types de fournisseur, envoyez le texte dans un second message.
-
-::note
-Dans l'inbox Digishare, la légende s'affiche sous les PDF et les autres documents. Les bulles d'image et de vidéo affichent encore un libellé générique (Photo, Vidéo) à la place de la légende. Le client reçoit la légende dans tous les cas.
-::
 
 ### Avec des boutons de réponse
 
@@ -312,15 +225,11 @@ L'en-tête peut être une `image`, une `video` ou un `document` ; les fichiers a
 ## À savoir
 
 ::note
-**`body` n'est pas une légende.** Pour un upload, `body` est ignoré quand un `file` est présent. Placez la légende dans `file.caption` : voir [Texte avec une pièce jointe](#texte-avec-une-pièce-jointe).
+**`202` signifie mis en file d'attente.** L'API d'événements répond dès que l'événement est accepté, pas quand le message est créé ou livré. Utilisez l'`event_id` pour retrouver le message ensuite : voir [Envoyer un Message](/fr/developer-guides/livechat/conversation/send-message-conversation#réponse).
 ::
 
 ::warning
-**Uploads : vérifiez le `type` dans la réponse.** Si Digishare ne peut pas télécharger ou décoder votre fichier (`url` inaccessible, `base64` malformé), l'appel renvoie tout de même `200`, mais le message revient avec `type: "text"` et un `body.name` valant `unsupported file type <file_name>` au lieu d'une pièce jointe. Une pièce jointe réussie renvoie toujours un `type` valant `image`, `video`, `audio`, `pdf`, `webp` ou `other`.
-::
-
-::note
-**`status: "sent"` ne signifie pas livré.** Sur l'API Messages, la réponse indique `sent` dès que Digishare a accepté le message (`delivery_timeline` vaut alors `null`), y compris pour l'espace réservé ci-dessus. Cela ne signifie pas que le téléphone du client l'a reçu.
+**Un fichier refusé ne crée aucun message.** Un fichier est vérifié après le `202` : si son type n'est pas autorisé, si le base64 est invalide ou s'il est trop volumineux, vous ne recevez aucune erreur et rien n'est envoyé. Vérifiez le fichier de votre côté avant l'envoi.
 ::
 
 ::note

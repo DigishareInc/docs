@@ -15,8 +15,8 @@ Detailed reference for sending text, location, interactive messages and attachme
 ::card{title="Incoming Messages" icon="i-mdi-download" to="/developer-guides/livechat/incoming-messages/constraints"}
 Understand how to receive and parse messages from customers (Text, Location, Buttons, Media).
 ::
-::card{title="Conversations" icon="i-mdi-forum-outline" to="/developer-guides/livechat/conversation/create-conversation"}
-Manage and interact with conversations via API, check availability, and send messages.
+::card{title="Send on Conversation" icon="i-mdi-forum-outline" to="/developer-guides/livechat/conversation/send-on-conversation"}
+The Event API reference: identify a conversation by its ID or by the customer's number, and send a message or a file.
 ::
 ::
 

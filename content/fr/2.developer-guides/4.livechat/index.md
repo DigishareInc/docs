@@ -15,8 +15,8 @@ Référence détaillée pour l'envoi de messages texte, de localisation, interac
 ::card{title="Messages Entrants" icon="i-mdi-download" to="/fr/developer-guides/livechat/incoming-messages/constraints"}
 Comprenez comment recevoir et analyser les messages des clients (Texte, Localisation, Boutons, Médias).
 ::
-::card{title="Conversations" icon="i-mdi-forum-outline" to="/fr/developer-guides/livechat/conversation/create-conversation"}
-Gérez et interagissez avec les conversations via l'API, vérifiez la disponibilité et envoyez des messages.
+::card{title="Envoyer un Message" icon="i-mdi-forum-outline" to="/fr/developer-guides/livechat/conversation/send-message-conversation"}
+La référence de l'API d'événements : désignez une conversation par son ID ou par le numéro du client, et envoyez un message ou un fichier.
 ::
 ::
 
