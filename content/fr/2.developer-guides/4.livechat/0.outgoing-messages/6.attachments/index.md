@@ -17,10 +17,10 @@ Les images, vidéos, fichiers audio et documents sont envoyés avec l'[API d'év
 | **Types de fournisseur**              | WhatsApp uniquement (`whatsapp`, `centrelatio`, `whatsapp_web`)    | Tous                                                  |
 | **`type` du message**                 | Vous le définissez                                                 | Détecté à partir du fichier                           |
 | **Légende (texte avec le fichier)**   | `body.caption`                                                     | `file.caption`                                        |
-| **Limite de taille**                  | Aucune côté Digishare : WhatsApp récupère le fichier et applique ses propres limites | Environ 700 Ko (1 Mo par événement)   |
+| **Limite de taille**                  | Aucune côté Digishare : WhatsApp récupère le fichier et applique ses propres limites | Environ 7 Mo (10 Mo par événement)    |
 
 ::tip
-Utilisez un **lien** pour les gros fichiers, les envois à fort volume, ou quand vos fichiers sont déjà hébergés et que les agents n'ont pas besoin de les voir dans l'inbox. Envoyez un **fichier** quand les agents doivent le voir dans l'inbox, ou quand il est petit (moins de 700 Ko environ) et hébergé nulle part.
+Utilisez un **lien** pour les gros fichiers, les envois à fort volume, ou quand vos fichiers sont déjà hébergés et que les agents n'ont pas besoin de les voir dans l'inbox. Envoyez un **fichier** quand les agents doivent le voir dans l'inbox, ou quand il fait moins de 7 Mo environ et n'est hébergé nulle part.
 ::
 
 ## Envoi par lien
@@ -107,7 +107,7 @@ Chaque champ, la limite de taille, les types de fichiers autorisés, ce qui arri
 
 ## Limites de taille des fichiers
 
-Pour un **fichier**, la limite de l'événement s'applique d'abord (1 Mo par événement, soit environ 700 Ko de fichier), puis celle du type de fournisseur derrière la conversation : la **plus basse** l'emporte. Pour un **lien**, Digishare ne télécharge rien : seules les limites du fournisseur s'appliquent, car WhatsApp récupère lui-même le fichier et refuse celui qui est trop volumineux.
+Pour un **fichier**, la limite de l'événement s'applique d'abord (10 Mo par événement, soit environ 7 Mo de fichier), puis celle du type de fournisseur derrière la conversation : la **plus basse** l'emporte. Pour un **lien**, Digishare ne télécharge rien : seules les limites du fournisseur s'appliquent, car WhatsApp récupère lui-même le fichier et refuse celui qui est trop volumineux.
 
 ### Limites par type de fournisseur
 

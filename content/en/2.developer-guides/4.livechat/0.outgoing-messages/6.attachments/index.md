@@ -17,10 +17,10 @@ Images, videos, audio files and documents are sent with the [Event API](/develop
 | **Provider types**               | WhatsApp only (`whatsapp`, `centrelatio`, `whatsapp_web`)          | All                                                  |
 | **Message `type`**               | You set it                                                         | Detected from the file                               |
 | **Caption (text with the file)** | `body.caption`                                                     | `file.caption`                                       |
-| **Size limit**                   | None on Digishare's side: WhatsApp fetches the file and applies its own limits | About 700 KB (1 MB per event)            |
+| **Size limit**                   | None on Digishare's side: WhatsApp fetches the file and applies its own limits | About 7 MB (10 MB per event)             |
 
 ::tip
-Use a **link** for large files, for high-volume sends, or when your files are already hosted and agents do not need to see them in the inbox. Send a **file** when agents must see it in the inbox, or when it is small (under about 700 KB) and not hosted anywhere.
+Use a **link** for large files, for high-volume sends, or when your files are already hosted and agents do not need to see them in the inbox. Send a **file** when agents must see it in the inbox, or when it is under about 7 MB and not hosted anywhere.
 ::
 
 ## Send by link
@@ -107,7 +107,7 @@ Every field, the size limit, the allowed file types, what happens to a refused f
 
 ## File size limits
 
-For a **file**, the event limit applies first (1 MB per event, so about 700 KB of file), then the limit of the provider type behind the conversation: the **smaller** one wins. For a **link**, Digishare downloads nothing, so only the provider's limits apply: WhatsApp fetches the file itself and rejects one that is too large.
+For a **file**, the event limit applies first (10 MB per event, so about 7 MB of file), then the limit of the provider type behind the conversation: the **smaller** one wins. For a **link**, Digishare downloads nothing, so only the provider's limits apply: WhatsApp fetches the file itself and rejects one that is too large.
 
 ### Limits by provider type
 
