@@ -9,6 +9,9 @@ description: Explore real-world scenarios and implementation guides for common b
 Automate order notifications and customer support for your online store.
 ::
 ::card{title="Send a PDF with a Caption" icon="i-mdi-file-pdf-box" to="/use-cases/send-pdf-with-caption"}
-Send a quote or an invoice as a PDF with a text caption in one WhatsApp message.
+Send a quote or an invoice as a PDF with a text caption in one WhatsApp or Telegram message.
+::
+::card{title="Link Contacts to Telegram" icon="i-mdi-send" to="/use-cases/link-contacts-to-telegram"}
+Give each contact a personal link, so they can receive your Telegram messages.
 ::
 ::

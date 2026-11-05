@@ -9,6 +9,9 @@ description: Explorez des scénarios réels et des guides d'implémentation pour
 Automatisez les notifications de commande et le support client pour votre boutique en ligne.
 ::
 ::card{title="Envoyer un PDF avec une légende" icon="i-mdi-file-pdf-box" to="/fr/use-cases/send-pdf-with-caption"}
-Envoyez un devis ou une facture en PDF avec une légende dans un seul message WhatsApp.
+Envoyez un devis ou une facture en PDF avec une légende dans un seul message WhatsApp ou Telegram.
+::
+::card{title="Lier vos contacts à Telegram" icon="i-mdi-send" to="/fr/use-cases/link-contacts-to-telegram"}
+Donnez à chaque contact un lien personnel, pour qu'il reçoive vos messages Telegram.
 ::
 ::
