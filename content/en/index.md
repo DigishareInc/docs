@@ -29,6 +29,8 @@ API Reference
 ::UPageGrid
 :UPageCard{title="API Best Practices" icon="i-mdi-check-circle" to="/developer-guides/best-practices" description="Learn how to optimize your integration for reliability and speed."}
 :UPageCard{title="API Reference" icon="i-mdi-book-open-variant" to="/developer-guides/authentication" description="Explore detailed endpoints, request structures, and authentication guides."}
+:UPageCard{title="Developer Guides" icon="i-mdi-book-multiple" to="/en/developer-guides" description="Browse every guide: authentication, campaigns, LiveChat, webhooks and more."}
+:UPageCard{title="Use Cases" icon="i-mdi-lightbulb-on" to="/en/use-cases" description="Step-by-step examples for common workflows, like sending a PDF or linking Telegram."}
 :UPageCard{title="Multilingual" icon="i-mdi-translate" to="/fr" description="Documentation fully mirrored in English and French."}
 ::
 ::

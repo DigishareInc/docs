@@ -31,6 +31,14 @@ export default defineNuxtConfig({
   nitro: {
     preset: "github_pages",
   },
+  hooks: {
+    // i18n leaves Docus's optional :lang in its routes, so /en/:lang? swallows /en/use-cases and shows a 404.
+    "pages:resolved"(pages) {
+      for (const page of pages) {
+        page.path = page.path.replace("/:lang?/:slug(.*)*", "/:slug(.*)+").replace("/:lang?", "");
+      }
+    },
+  },
   robots: {
     robotsTxt: false,
   },

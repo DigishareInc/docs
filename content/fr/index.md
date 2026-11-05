@@ -29,6 +29,8 @@ Référence API
 ::UPageGrid
 
 :UPageCard{title="Référence API" icon="i-mdi-book-open-variant" to="/fr/developer-guides/authentication" description="Explorez les points de terminaison, les structures de requêtes et l'authentification."}
+:UPageCard{title="Guides développeur" icon="i-mdi-book-multiple" to="/fr/developer-guides" description="Parcourez tous les guides : authentification, campagnes, LiveChat, webhooks et plus."}
+:UPageCard{title="Cas d'usage" icon="i-mdi-lightbulb-on" to="/fr/use-cases" description="Des exemples pas à pas pour les besoins courants, comme envoyer un PDF ou lier Telegram."}
 :UPageCard{title="Multilingual" icon="i-mdi-translate" to="/" description="Documentation entièrement disponible en Anglais et Français."}
 ::
 ::
