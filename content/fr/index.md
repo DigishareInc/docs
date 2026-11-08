@@ -4,13 +4,24 @@ seo:
   description: Documentation officielle de la plateforme Digishare. Guides, références API et meilleures pratiques.
 ---
 
-::UPageHero{title="Engagement Client Moderne, Simplifié." description="Construisez, automatisez et développez vos communications avec l'interface officielle de la plateforme Digishare. Intégrez une fois, diffusez partout."}
+::UPageHero{title="Engagement Client Moderne, Simplifié." description="Construisez, automatisez et développez vos communications avec l'interface officielle de la plateforme Digishare. Intégrez une fois, diffusez partout." :ui='{"container":"py-12 sm:py-16 lg:py-20 gap-6 sm:gap-y-8"}'}
 #links
 ::UButton{to="/fr/overview/introduction" icon="i-mdi-arrow-right" size="xl" color="primary" trailing}
 Commencer
 ::
 ::UButton{to="/fr/developer-guides/authentication" variant="ghost" color="neutral" size="xl"}
 Référence API
+::
+
+#default
+::div{class="flex flex-wrap justify-center gap-2"}
+  :UButton{to="/fr/developer-guides/message-templates" icon="i-mdi-file-document-outline" label="Modèles de message" variant="soft" color="neutral"}
+  :UButton{to="/fr/developer-guides/campaigns" icon="i-mdi-bullhorn" label="Campagnes" variant="soft" color="neutral"}
+  :UButton{to="/fr/developer-guides/livechat" icon="i-mdi-forum" label="LiveChat" variant="soft" color="neutral"}
+  :UButton{to="/fr/developer-guides/thirds" icon="i-mdi-account-group" label="Contacts" variant="soft" color="neutral"}
+  :UButton{to="/fr/developer-guides/webhooks" icon="i-mdi-webhook" label="Webhooks" variant="soft" color="neutral"}
+  :UButton{to="/fr/developer-guides/embedded/embedded_chat_docs" icon="i-mdi-message-text" label="Chat intégré" variant="soft" color="neutral"}
+  :UButton{to="/fr/use-cases" icon="i-mdi-lightbulb-on" label="Cas d'usage" variant="soft" color="neutral"}
 ::
 ::
 
