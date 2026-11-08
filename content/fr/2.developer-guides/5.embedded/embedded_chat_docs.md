@@ -9,48 +9,10 @@ Intégrez le Widget Chat Digishare dans votre site web afin que vos utilisateurs
 
 ## Aperçu
 
-::Mermaid
----
-code: |
-  sequenceDiagram
-      actor Client as 🏢 Client
-      participant Platform as 🔑 Plateforme Digishare
-      actor EndUser as 👤 Utilisateur Final
-      participant Website as 🌐 Site Web Client
-      participant Chat as 💬 Widget Chat
-
-      rect rgb(230, 240, 255)
-          Note over Client,Platform: 🔧 Phase 1 — Configuration du compte (une seule fois)
-          Client->>Platform: Se connecter à la Plateforme Digishare
-          Platform-->>Client: Bienvenue ! Voici votre tableau de bord
-          Client->>Platform: Aller dans Paramètres → copier l'ID Utilisateur
-          Platform-->>Client: Votre ID Utilisateur : USR-XXXXX
-          Client->>Platform: Générer un Token d'Accès
-          Platform-->>Client: Votre Token d'Accès : TKN-XXXXX ✅
-      end
-
-      rect rgb(230, 255, 230)
-          Note over Client,Chat: 🔗 Phase 2 — Générer un Pass Chat
-          EndUser->>Website: Visite votre site web & se connecte
-          Website->>Platform: Créer un pass chat à usage unique
-          Note over Website,Platform: 🔐 Avec votre Token d'Accès + ID Utilisateur
-          Platform-->>Website: Pass à usage unique : PASS-XXXXX ✅
-      end
-
-      rect rgb(255, 245, 230)
-          Note over EndUser,Chat: 💬 Phase 3 — Ouvrir le Chat
-          Website->>Chat: Intégrer le widget chat avec le pass
-          Chat->>Platform: Vérifier ce pass
-          Platform-->>Chat: Pass valide ! ✅
-          Note over Chat: 🔒 Pass détruit après utilisation
-      end
-
-      rect rgb(240, 230, 255)
-          Note over EndUser,Chat: ✨ Phase 4 — Prêt
-          Chat-->>EndUser: Chat chargé — déjà connecté !
-      end
----
-::
+1. **Configuration du compte (une seule fois) :** connectez-vous à la Plateforme Digishare, copiez votre **ID Utilisateur** dans Paramètres et générez un **Token d'Accès**.
+2. **Générer un pass chat :** quand un utilisateur se connecte à votre site, votre serveur demande à Digishare un pass à usage unique, avec votre Token d'Accès et votre ID Utilisateur.
+3. **Ouvrir le chat :** votre site charge le widget chat avec ce pass. Digishare vérifie le pass, puis le détruit.
+4. **Prêt :** le chat s'ouvre, et l'utilisateur est déjà connecté.
 
 ---
 

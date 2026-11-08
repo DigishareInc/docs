@@ -9,48 +9,10 @@ Embed the Digishare Chat Widget into your website so your users can chat directl
 
 ## Overview
 
-::Mermaid
----
-code: |
-  sequenceDiagram
-      actor Client as 🏢 Client
-      participant Platform as 🔑 Digishare Platform
-      actor EndUser as 👤 End User
-      participant Website as 🌐 Client Website
-      participant Chat as 💬 Chat Widget
-
-      rect rgb(230, 240, 255)
-          Note over Client,Platform: 🔧 Phase 1 — Account Setup (one time)
-          Client->>Platform: Log in to Digishare Platform
-          Platform-->>Client: Welcome! Here is your dashboard
-          Client->>Platform: Go to Settings → copy User ID
-          Platform-->>Client: Your User ID: USR-XXXXX
-          Client->>Platform: Generate an Access Token
-          Platform-->>Client: Your Access Token: TKN-XXXXX ✅
-      end
-
-      rect rgb(230, 255, 230)
-          Note over Client,Chat: 🔗 Phase 2 — Generate a Chat Pass
-          EndUser->>Website: Visits your website & logs in
-          Website->>Platform: Create a one-time chat pass
-          Note over Website,Platform: 🔐 Using your Access Token + User ID
-          Platform-->>Website: One-time pass: PASS-XXXXX ✅
-      end
-
-      rect rgb(255, 245, 230)
-          Note over EndUser,Chat: 💬 Phase 3 — Open the Chat
-          Website->>Chat: Embed chat widget with the pass
-          Chat->>Platform: Verify this pass
-          Platform-->>Chat: Pass is valid! ✅
-          Note over Chat: 🔒 Pass destroyed after use
-      end
-
-      rect rgb(240, 230, 255)
-          Note over EndUser,Chat: ✨ Phase 4 — Ready
-          Chat-->>EndUser: Chat loaded — already logged in!
-      end
----
-::
+1. **Account setup (one time):** log in to the Digishare Platform, copy your **User ID** from Settings and generate an **Access Token**.
+2. **Generate a chat pass:** when a user logs in to your website, your server asks Digishare for a one-time pass, using your Access Token and User ID.
+3. **Open the chat:** your website loads the chat widget with that pass. Digishare checks the pass, then destroys it.
+4. **Ready:** the chat opens, and the user is already logged in.
 
 ---
 
