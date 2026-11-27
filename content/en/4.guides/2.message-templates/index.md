@@ -8,6 +8,16 @@ icon: i-mdi-file-document-edit-outline
 
 A **message template** is a ready-to-use message. You use it in campaigns, automations and the chat. One template can hold **one text per channel**: WhatsApp, Telegram, SMS and e-mail.
 
+:guide-video{src="/docs/guides/message-template-fr.mp4" poster="/docs/guides/message-template-poster-fr.webp"}
+
+::note
+The video shows a WhatsApp template, from picking the channel to sending it to Meta. It is in French, with captions; the app is in French too. The data it shows is fictional.
+::
+
+::collapsible{name="the Moroccan Darija version"}
+:guide-video{src="/docs/guides/message-template-ar.mp4" poster="/docs/guides/message-template-poster-ar.webp"}
+::
+
 ## Open the editor
 
 ::steps

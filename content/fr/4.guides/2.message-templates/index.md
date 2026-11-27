@@ -8,6 +8,16 @@ icon: i-mdi-file-document-edit-outline
 
 Un **modèle de message** est un message prêt à l'emploi. Vous l'utilisez dans les campagnes, les automatisations et le chat. Un même modèle peut avoir **un texte par canal** : WhatsApp, Telegram, SMS et e-mail.
 
+:guide-video{src="/docs/guides/message-template-fr.mp4" poster="/docs/guides/message-template-poster-fr.webp"}
+
+::note
+La vidéo montre un modèle WhatsApp, du choix du canal jusqu'à l'envoi à Meta. Les données sont fictives.
+::
+
+::collapsible{name="la version en darija"}
+:guide-video{src="/docs/guides/message-template-ar.mp4" poster="/docs/guides/message-template-poster-ar.webp"}
+::
+
 ## Ouvrir l'éditeur
 
 ::steps
