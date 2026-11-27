@@ -1,4 +1,8 @@
 export default defineAppConfig({
+  // Docus 5: top sections become header tabs, the sidebar shows only the current one.
+  navigation: {
+    sub: "header",
+  },
   docus: {
     title: "Digishare",
     description: "The Official Digishare Platform Documentation",

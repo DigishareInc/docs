@@ -14,14 +14,22 @@ Référence API
 ::
 
 #default
-::div{class="flex flex-wrap justify-center gap-2"}
-  :UButton{to="/fr/developer-guides/message-templates" icon="i-mdi-file-document-outline" label="Modèles de message" variant="soft" color="neutral"}
-  :UButton{to="/fr/developer-guides/campaigns" icon="i-mdi-bullhorn" label="Campagnes" variant="soft" color="neutral"}
-  :UButton{to="/fr/developer-guides/livechat" icon="i-mdi-forum" label="LiveChat" variant="soft" color="neutral"}
-  :UButton{to="/fr/developer-guides/thirds" icon="i-mdi-account-group" label="Contacts" variant="soft" color="neutral"}
-  :UButton{to="/fr/developer-guides/webhooks" icon="i-mdi-webhook" label="Webhooks" variant="soft" color="neutral"}
-  :UButton{to="/fr/developer-guides/embedded/embedded_chat_docs" icon="i-mdi-message-text" label="Chat intégré" variant="soft" color="neutral"}
-  :UButton{to="/fr/use-cases" icon="i-mdi-lightbulb-on" label="Cas d'usage" variant="soft" color="neutral"}
+::div{class="flex justify-center"}
+  :UContentSearchButton{:collapsed="false" size="xl" variant="outline" class="w-full" style="max-width: 36rem"}
+::
+::
+
+::UPageSection{title="Je veux…" description="Choisissez ce que vous voulez faire, la bonne page s'ouvre."}
+::UPageGrid
+:UPageCard{icon="i-lucide-megaphone" title="Envoyer une campagne" description="WhatsApp, SMS ou Telegram, à des milliers de contacts, par l'API." to="/fr/developer-guides/campaigns"}
+:UPageCard{icon="i-lucide-file-pen-line" title="Créer un modèle de message" description="Pas à pas dans l'application, pour WhatsApp, Telegram, SMS et e-mail." to="/fr/guides/message-templates"}
+:UPageCard{icon="i-lucide-key-round" title="Connecter l'API" description="Créez votre jeton et faites votre premier appel." to="/fr/developer-guides/authentication"}
+:UPageCard{icon="i-lucide-webhook" title="Recevoir des webhooks" description="Soyez prévenu à chaque message, statut de livraison ou ticket." to="/fr/developer-guides/webhooks"}
+:UPageCard{icon="i-lucide-messages-square" title="Répondre aux clients par l'API" description="Lisez et envoyez les messages du LiveChat depuis votre système." to="/fr/developer-guides/livechat"}
+:UPageCard{icon="i-lucide-users" title="Gérer mes contacts" description="Créez, importez et complétez vos contacts avec des champs personnalisés." to="/fr/developer-guides/thirds"}
+:UPageCard{icon="i-lucide-file-text" title="Envoyer un PDF avec un texte" description="Un devis ou une facture et son texte, dans un seul message WhatsApp ou Telegram." to="/fr/use-cases/send-pdf-with-caption"}
+:UPageCard{icon="i-lucide-send" title="Lier mes contacts à Telegram" description="Un lien personnel par contact, pour qu'il reçoive vos messages Telegram." to="/fr/use-cases/link-contacts-to-telegram"}
+:UPageCard{icon="i-lucide-sheet" title="Exporter les tickets vers Excel" description="Choisissez les colonnes et les données de vos tickets, puis téléchargez le fichier." to="/fr/guides/export-tickets"}
 ::
 ::
 

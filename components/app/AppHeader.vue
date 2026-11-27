@@ -4,6 +4,7 @@ const site = useSiteConfig()
 
 // Docus composables are auto-imported in Nuxt context
 const { localePath, isEnabled, locales } = useDocusI18n()
+const { subNavigationMode } = useSubNavigation()
 
 const links = computed(() => appConfig.github && appConfig.github.url
   ? [
@@ -28,6 +29,7 @@ function printPage() {
     :ui="{ center: 'flex-1' }"
     :to="localePath('/')"
     :title="appConfig.header?.title || site.name"
+    :class="{ 'flex flex-col': subNavigationMode === 'header' }"
   >
     <AppHeaderCenter />
 
@@ -92,6 +94,13 @@ function printPage() {
 
     <template #body>
       <AppHeaderBody />
+    </template>
+
+    <template
+      v-if="subNavigationMode === 'header'"
+      #bottom
+    >
+      <AppHeaderBottom />
     </template>
   </UHeader>
 </template>
