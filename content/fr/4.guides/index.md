@@ -8,4 +8,7 @@ description: Des guides pas à pas pour utiliser les écrans de Digishare, avec 
 ::card{title="Exporter les tickets vers Excel" icon="i-mdi-microsoft-excel" to="/fr/guides/export-tickets"}
 Choisissez les colonnes, les données personnalisées et l'ordre, puis téléchargez un fichier Excel.
 ::
+::card{title="Créer un modèle de message" icon="i-mdi-file-document-edit-outline" to="/fr/guides/message-templates"}
+WhatsApp, Telegram, SMS et e-mail : les étapes, les règles et une comparaison des canaux.
+::
 ::
