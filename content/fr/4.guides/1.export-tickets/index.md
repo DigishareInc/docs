@@ -1,4 +1,6 @@
 ---
+navigation:
+  title: Vue d'ensemble
 title: Exporter les tickets vers Excel
 description: Choisissez exactement les colonnes et les données personnalisées de vos tickets, puis téléchargez un fichier Excel.
 icon: i-mdi-microsoft-excel
